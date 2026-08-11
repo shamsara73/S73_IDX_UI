@@ -227,6 +227,52 @@ export default function FilterPanel({
             </div>
             <div className='idx-filter-group'>
               <p className='idx-filter-group-title'>
+                <span>Dividen</span>
+              </p>
+              <p className='idx-filter-group-desc'>
+                Minimal dividend yield (%) 12 bulan terakhir dan jumlah tahun membagikan dividen (4 tahun terakhir).
+              </p>
+              <div className='idx-filter-group-fields'>
+                <div className='idx-form-group'>
+                  <label className='idx-form-label' htmlFor='idx-filter-divYieldMin'>
+                    Div Yield Min (%)
+                  </label>
+                  <input
+                    id='idx-filter-divYieldMin'
+                    type='number'
+                    className='idx-input'
+                    placeholder='0'
+                    step={0.1}
+                    value={params.divYieldMin ?? ''}
+                    onChange={(event) =>
+                      updateFilterParam(
+                        'divYieldMin',
+                        event.target.value === '' ? undefined : Number(event.target.value)
+                      )}
+                  />
+                </div>
+                <div className='idx-form-group'>
+                  <label className='idx-form-label' htmlFor='idx-filter-divYearsMin'>
+                    Div Years Min
+                  </label>
+                  <input
+                    id='idx-filter-divYearsMin'
+                    type='number'
+                    className='idx-input'
+                    placeholder='0'
+                    step={1}
+                    value={params.divYearsMin ?? ''}
+                    onChange={(event) =>
+                      updateFilterParam(
+                        'divYearsMin',
+                        event.target.value === '' ? undefined : Number(event.target.value)
+                      )}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className='idx-filter-group'>
+              <p className='idx-filter-group-title'>
                 <Droplets size={16} aria-hidden />
                 <span>Likuiditas</span>
               </p>

@@ -13,6 +13,7 @@ import Home from '@app/pages/Home.tsx'
 import About from '@app/pages/About.tsx'
 import Screener from '@app/pages/Screener.tsx'
 import Historical from '@app/pages/Historical.tsx'
+import Backtest from '@app/pages/Backtest.tsx'
 
 export default function App() {
   const location = useLocation()
@@ -50,6 +51,13 @@ export default function App() {
               <span className='idx-nav-item-text'>Historical</span>
             </Link>
             <Link
+              to='/backtest'
+              className={`idx-nav-item ${isActive('/backtest') ? 'idx-nav-item-active' : ''}`}
+            >
+              <LineChart size={16} aria-hidden />
+              <span className='idx-nav-item-text'>Backtest</span>
+            </Link>
+            <Link
               to='/about'
               className={`idx-nav-item ${isActive('/about') ? 'idx-nav-item-active' : ''}`}
             >
@@ -65,6 +73,7 @@ export default function App() {
           <Route path='/about' element={<About />} />
           <Route path='/historical' element={<Historical />} />
           <Route path='/screener' element={<Screener />} />
+          <Route path='/backtest' element={<Backtest />} />
         </Routes>
       </main>
     </div>

@@ -44,6 +44,52 @@ export default function Screener() {
   const lastSearchForRequestRef = useRef<string>('')
   const { data: generalData } = Hooks.useGeneral()
   const { watchlistRows, watchlistCodes, toggleWatchlist } = Hooks.useWatchlist()
+  const [savedScreens, setSavedScreens] = useState<Types.SavedScreen[]>([])
+  const [screenName, setScreenName] = useState('')
+  useEffect(() => {
+    Hooks.fetchApi<{ data: Types.SavedScreen[] }>('/api/screens')
+      .then((res) => setSavedScreens(res.data ?? []))
+      .catch(() => setSavedScreens([]))
+  }, [])
+  const handleSaveScreen = useCallback(async () => {
+    const name = screenName.trim()
+    if (name === '') {
+      return
+    }
+    const filters = JSON.stringify(appliedParams)
+    try {
+      await fetch('/api/screens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, filters })
+      })
+      setScreenName('')
+      const res = await Hooks.fetchApi<{ data: Types.SavedScreen[] }>('/api/screens')
+      setSavedScreens(res.data ?? [])
+    } catch {
+      /* ignore */
+    }
+  }, [screenName, appliedParams])
+  const handleLoadScreen = useCallback((screen: Types.SavedScreen) => {
+    try {
+      const parsed = JSON.parse(screen.filters) as Partial<Types.CandidatesParams>
+      const next = { ...defaultParams, ...parsed, offset: 0 }
+      setParams(next)
+      setAppliedParams(next)
+      setSearchQuery('')
+      setSearchForRequest('')
+    } catch {
+      /* ignore */
+    }
+  }, [])
+  const handleDeleteScreen = useCallback(async (id: number) => {
+    try {
+      await fetch(`/api/screens?id=${id}`, { method: 'DELETE' })
+      setSavedScreens((prev) => prev.filter((s) => s.id !== id))
+    } catch {
+      /* ignore */
+    }
+  }, [])
   const {
     data: screenerRsiData,
     loading: screenerRsiLoading,
@@ -178,6 +224,32 @@ export default function Screener() {
           onRefresh={refetchCandidates}
           loading={mainTab === 'watchlist' ? false : candidatesLoading}
         />
+        <div className='idx-screens-bar'>
+          <input
+            type='text'
+            className='idx-input'
+            placeholder='Nama screen (mis. Value + Dividen)'
+            value={screenName}
+            onChange={(e) => setScreenName(e.target.value)}
+          />
+          <button type='button' onClick={handleSaveScreen}>
+            Simpan Screen
+          </button>
+          {savedScreens.map((screen) => (
+            <span key={screen.id} className='idx-screen-chip'>
+              <button type='button' onClick={() => handleLoadScreen(screen)}>
+                {screen.name}
+              </button>
+              <button
+                type='button'
+                aria-label={`Hapus ${screen.name}`}
+                onClick={() => handleDeleteScreen(screen.id)}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
         <div className='idx-tabs idx-mb-24'>
           <button
             type='button'

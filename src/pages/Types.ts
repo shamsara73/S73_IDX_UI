@@ -27,6 +27,8 @@ export interface CandidateRow {
   volume: number | null
   changePct: number | null
   compositePercentile: number
+  divYield?: number | null
+  divYears?: number | null
 }
 
 export interface CandidateRowWithSectorRank extends CandidateRow {
@@ -52,6 +54,8 @@ export interface CandidatesParams {
   derMax?: number
   momentumWeek?: 26 | 52
   momentumMin?: number
+  divYieldMin?: number
+  divYearsMin?: number
   withSectorRank?: boolean
   sector?: string
   search?: string
@@ -63,7 +67,37 @@ export interface CandidatesResponse {
   limit: number
   offset: number
   serverTimestamp: string
-  data: CandidateRow[] | CandidateRowWithSectorRank[]
+  data: CandidateTableRow[]
+}
+
+export interface SavedScreen {
+  id: number
+  name: string
+  filters: string
+  createdAt: string
+}
+
+export interface BacktestResult {
+  params: {
+    strategy: string
+    topN: number
+    rebalanceWeeks: number
+    startDate: number
+    minValue?: number
+    excludeNotation?: boolean
+  }
+  equity: { date: number; strategy: number; benchmark: number }[]
+  stats: {
+    strategyTotal: number
+    benchmarkTotal: number
+    excess: number
+    annualized: number
+    benchmarkAnnualized: number
+    maxDrawdown: number
+    winRate: number
+    periods: number
+  }
+  lastHoldings: { code: string; name: string | null; metric: number | null }[]
 }
 
 export interface CandidatesTableProps {

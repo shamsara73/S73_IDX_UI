@@ -1,11 +1,3 @@
-/**
- * Copyright (c) 2026 IDX Screener by @NeaByteLab (https://neabyte.com)
- * SPDX-License-Identifier: MIT
- *
- * Open to remote work & consulting.
- * Fullstack developer with a focus on security and experience in trading systems.
- */
-
 @import '@app/pages/styles/base.css';
 @import '@app/pages/styles/card.css';
 @import '@app/pages/styles/dashboard.css';
@@ -19,3 +11,82 @@
 @import '@app/pages/styles/table.css';
 @import '@app/pages/styles/utilities.css';
 @import '@app/pages/styles/variables.css';
+
+/* Backtest page */
+.idx-backtest-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--idx-space-16);
+  align-items: flex-end;
+}
+
+.idx-backtest-controls .idx-form-group {
+  flex: 1 1 140px;
+  min-width: 120px;
+}
+
+.idx-backtest-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--idx-space-12);
+  margin-top: var(--idx-space-16);
+}
+
+.idx-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--idx-space-4);
+  padding: var(--idx-space-12);
+  border: 1px solid var(--idx-border, rgba(0, 0, 0, 0.08));
+  border-radius: var(--idx-radius);
+}
+
+.idx-stat-label {
+  font-size: var(--idx-text-xs);
+  color: var(--idx-text-muted);
+}
+
+.idx-stat-value {
+  font-size: var(--idx-text-lg);
+  font-weight: 800;
+}
+
+.idx-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--idx-space-16);
+  margin-top: var(--idx-space-12);
+  font-size: var(--idx-text-xs);
+  color: var(--idx-text-muted);
+}
+
+.idx-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--idx-space-6);
+}
+
+.idx-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.idx-legend-dot-strategy {
+  background: #2563eb;
+}
+
+.idx-legend-dot-benchmark {
+  background: #94a3b8;
+}
+
+.idx-legend-date {
+  margin-left: auto;
+}
+
+.idx-error {
+  color: var(--idx-danger, #dc2626);
+  margin-top: var(--idx-space-12);
+}

@@ -39,6 +39,8 @@ export async function GET(ctx: Context) {
   let derMax = Utils.parseNumber(Utils.queryString(derMaxRaw))
   let momentumMin = Utils.parseNumber(Utils.queryString(momentumMinRaw))
   let momentumWeek = Utils.parseWeek(Utils.queryString(momentumWeekRaw))
+  const divYieldMin = Utils.parseNumber(Utils.queryString(ctx.get.query('divYieldMin')))
+  const divYearsMin = Utils.parseNumber(Utils.queryString(ctx.get.query('divYearsMin')))
   const defaultFilter = Utils.parseBoolean(Utils.queryString(ctx.get.query('defaultFilter')))
   if (defaultFilter) {
     if (!Utils.queryParamSent(excludeNotationRaw)) {
@@ -88,7 +90,8 @@ export async function GET(ctx: Context) {
     value: Schemas.summary.value,
     volume: Schemas.summary.volume,
     change: Schemas.summary.change,
-    previous: Schemas.summary.previous
+    previous: Schemas.summary.previous,
+    priceClose: Schemas.summary.priceClose
   })
     .from(Schemas.summary)
     .where(eq(Schemas.summary.date, dateInt))
@@ -105,7 +108,8 @@ export async function GET(ctx: Context) {
         value: Schemas.summary.value,
         volume: Schemas.summary.volume,
         change: Schemas.summary.change,
-        previous: Schemas.summary.previous
+        previous: Schemas.summary.previous,
+        priceClose: Schemas.summary.priceClose
       })
         .from(Schemas.summary)
         .where(eq(Schemas.summary.date, summaryDate))
@@ -113,6 +117,7 @@ export async function GET(ctx: Context) {
   }
   const codeToLiquidity = new Map<string, Types.LiquiditySnapshot>()
   const codeToChangePct = new Map<string, number | null>()
+  const codeToLastClose = new Map<string, number>()
   for (const row of summaryRows) {
     codeToLiquidity.set(row.stockCode, {
       value: row.value,
@@ -120,6 +125,52 @@ export async function GET(ctx: Context) {
     })
     const changePct = Utils.changePctFromPrevious(row.change, row.previous)
     codeToChangePct.set(row.stockCode, changePct)
+    if (row.priceClose != null && Number.isFinite(row.priceClose) && row.priceClose > 0) {
+      codeToLastClose.set(row.stockCode, row.priceClose)
+    }
+  }
+  const divRows = await Database.select({
+    code: Schemas.dividends.code,
+    cashDividend: Schemas.dividends.cashDividend,
+    recordDate: Schemas.dividends.recordDate
+  }).from(Schemas.dividends)
+  const nowTs = Date.now()
+  const cutoff365 = nowTs - 365 * 86400000
+  const cutoff4y = nowTs - 4 * 365 * 86400000
+  const codeToDivSum365 = new Map<string, number>()
+  const codeToDivYears = new Map<string, Set<number>>()
+  for (const d of divRows) {
+    if (d.recordDate == null || d.recordDate === '') {
+      continue
+    }
+    const ts = Number.isFinite(Number(d.recordDate))
+      ? Number(d.recordDate)
+      : new Date(d.recordDate).getTime()
+    if (!Number.isFinite(ts)) {
+      continue
+    }
+    if (ts >= cutoff365) {
+      codeToDivSum365.set(d.code, (codeToDivSum365.get(d.code) ?? 0) + (d.cashDividend ?? 0))
+    }
+    if (ts >= cutoff4y) {
+      const year = new Date(ts).getFullYear()
+      const set = codeToDivYears.get(d.code) ?? new Set<number>()
+      set.add(year)
+      codeToDivYears.set(d.code, set)
+    }
+  }
+  const codeToDividend = new Map<
+    string,
+    { divYield: number | null; divYears: number }
+  >()
+  for (const code of new Set([...codeToDivSum365.keys(), ...codeToDivYears.keys()])) {
+    const sum = codeToDivSum365.get(code) ?? 0
+    const lastClose = codeToLastClose.get(code)
+    const divYield = lastClose != null && lastClose > 0 ? sum / lastClose : null
+    codeToDividend.set(code, {
+      divYield,
+      divYears: codeToDivYears.get(code)?.size ?? 0
+    })
   }
   const screenerRows = await Database.select({
     code: Schemas.screener.code,
@@ -179,6 +230,7 @@ export async function GET(ctx: Context) {
     const volume = liquidity?.volume ?? null
     const fundamentals = codeToFundamentals.get(row.code)
     const changePct = codeToChangePct.get(row.code) ?? null
+    const dividend = codeToDividend.get(row.code)
     return {
       ...row,
       hasNotation,
@@ -192,7 +244,9 @@ export async function GET(ctx: Context) {
       value: transactionValue,
       volume,
       changePct,
-      compositePercentile: 0
+      compositePercentile: 0,
+      divYield: dividend?.divYield ?? null,
+      divYears: dividend?.divYears ?? 0
     }
   })
   let withSectorRankApplied: Types.CandidateRow[] | Types.CandidateRowWithSectorRank[] =
@@ -234,6 +288,14 @@ export async function GET(ctx: Context) {
   }
   if (minVolume != null) {
     filteredCandidates = filteredCandidates.filter((row) => (row.volume ?? 0) >= minVolume)
+  }
+  if (divYieldMin != null) {
+    filteredCandidates = filteredCandidates.filter(
+      (row) => ((row.divYield ?? 0) * 100) >= divYieldMin
+    )
+  }
+  if (divYearsMin != null) {
+    filteredCandidates = filteredCandidates.filter((row) => (row.divYears ?? 0) >= divYearsMin)
   }
   const sectorParam = Utils.queryString(ctx.get.query('sector'))?.trim()
   if (sectorParam !== undefined && sectorParam !== '') {

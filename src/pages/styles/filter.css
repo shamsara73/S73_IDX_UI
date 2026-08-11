@@ -126,6 +126,49 @@
   min-width: 0;
 }
 
+.idx-screens-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--idx-space-8);
+  margin-bottom: var(--idx-space-16);
+  padding: var(--idx-space-12);
+  background: var(--idx-card-bg, #fff);
+  border: 1px solid var(--idx-border, rgba(0, 0, 0, 0.08));
+  border-radius: var(--idx-radius);
+}
+
+.idx-screens-bar input {
+  flex: 1 1 160px;
+  min-width: 140px;
+}
+
+.idx-screens-bar .idx-screen-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--idx-space-4);
+  padding: var(--idx-space-4) var(--idx-space-8);
+  background: var(--idx-primary-soft, rgba(0, 100, 220, 0.08));
+  border-radius: var(--idx-radius);
+}
+
+.idx-screens-bar .idx-screen-chip button:first-child {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.idx-screens-bar .idx-screen-chip button:last-child {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--idx-text-muted, #666);
+  font-size: 14px;
+  line-height: 1;
+}
+
 .idx-filter-group-fields .idx-form-group {
   flex: 1 1 0;
   margin-bottom: 0;

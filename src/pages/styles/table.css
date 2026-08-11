@@ -229,6 +229,16 @@
   text-overflow: ellipsis;
 }
 
+.idx-table th.idx-table-col-divyield,
+.idx-table td.idx-table-col-divyield {
+  min-width: 84px;
+}
+
+.idx-table th.idx-table-col-divyears,
+.idx-table td.idx-table-col-divyears {
+  min-width: 56px;
+}
+
 .idx-table tbody tr {
   cursor: pointer;
   transition: background 0.2s;

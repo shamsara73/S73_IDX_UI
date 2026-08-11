@@ -93,6 +93,8 @@ export default function CandidatesTable({
               <th className='idx-table-th-right'>PER</th>
               <th className='idx-table-th-right'>ROE</th>
               <th className='idx-table-th-right'>DER</th>
+              <th className='idx-table-th-right'>Div Yield (%)</th>
+              <th className='idx-table-th-right'>Div Yrs</th>
               <th className='idx-table-th-right'>26w (%)</th>
               <th className='idx-table-th-right'>52w (%)</th>
               <th className='idx-table-th-right'>Comp (%)</th>
@@ -162,6 +164,15 @@ export default function CandidatesTable({
                   </td>
                   <td className='idx-table-td-right'>
                     {Utils.Format.formatNum(candidateRow.der, 1)}
+                  </td>
+                  <td className='idx-table-td-right'>
+                    {Utils.Format.formatNum(
+                      candidateRow.divYield != null ? candidateRow.divYield * 100 : null,
+                      2
+                    )}
+                  </td>
+                  <td className='idx-table-td-right'>
+                    {Utils.Format.formatNum(candidateRow.divYears ?? null, 0)}
                   </td>
                   <td className='idx-table-td-right'>
                     <span

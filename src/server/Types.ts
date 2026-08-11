@@ -147,6 +147,8 @@ export interface CandidateRow extends RankedRowWithFlags {
   volume: number | null
   changePct: number | null
   compositePercentile: number
+  divYield?: number | null
+  divYears?: number | null
 }
 
 export interface CandidateRowWithSectorRank extends CandidateRow {
