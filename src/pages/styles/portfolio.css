@@ -1,0 +1,94 @@
+/* Portfolio page */
+.idx-portfolio-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.idx-portfolio-form .idx-input {
+  flex: 1 1 140px;
+  min-width: 120px;
+}
+
+.idx-portfolio-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.idx-portfolio-stats .idx-stat {
+  flex: 1 1 200px;
+}
+
+.idx-pnl-positive {
+  color: #16a34a;
+}
+
+.idx-pnl-negative {
+  color: #dc2626;
+}
+
+.idx-alloc {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0 8px;
+}
+
+.idx-alloc-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.idx-alloc-label {
+  flex: 0 0 180px;
+  font-size: 13px;
+  color: var(--idx-text-secondary, #64748b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.idx-alloc-bar {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--idx-bg-muted, #f1f5f9);
+  overflow: hidden;
+}
+
+.idx-alloc-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22c55e, #3b82f6);
+}
+
+.idx-alloc-pct {
+  flex: 0 0 56px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.idx-btn-ghost {
+  border: 1px solid var(--idx-border, #e2e8f0);
+  background: transparent;
+  color: #dc2626;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.idx-btn-ghost:hover {
+  background: #fef2f2;
+}
+
+.idx-empty {
+  padding: 20px;
+  color: var(--idx-text-secondary, #64748b);
+  font-size: 14px;
+  text-align: center;
+}

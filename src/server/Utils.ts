@@ -167,6 +167,21 @@ export default class Utils {
     return parseInt(value, 10)
   }
 
+  static dateToTimestamp(value: string | number | null | undefined): number | null {
+    if (value == null || value === '') {
+      return null
+    }
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : null
+    }
+    const n = Number(value)
+    if (Number.isFinite(n)) {
+      return n > 1e12 ? n : n * 1000
+    }
+    const t = new Date(value).getTime()
+    return Number.isFinite(t) ? t : null
+  }
+
   static addDaysToDateInt(dateInt: number, deltaDays: number): number {
     const year = Math.floor(dateInt / 10000)
     const month = Math.floor((dateInt % 10000) / 100) - 1

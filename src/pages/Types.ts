@@ -79,6 +79,38 @@ export interface SavedScreen {
   createdAt: string
 }
 
+export interface PortfolioRow {
+  id: number
+  code: string
+  name: string | null
+  sector: string | null
+  shares: number
+  avgCost: number
+  note: string | null
+  price: number | null
+  costBasis: number
+  marketValue: number | null
+  pnl: number | null
+  pnlPct: number | null
+  divPerShare12m: number | null
+  divAccrual: number | null
+  addedAt: string | null
+}
+
+export interface PortfolioSummary {
+  costBasis: number
+  marketValue: number
+  pnl: number
+  pnlPct: number | null
+  divAccrual: number
+  divYieldOnCost: number | null
+}
+
+export interface PortfolioResponse {
+  data: PortfolioRow[]
+  summary: PortfolioSummary | null
+}
+
 export interface BacktestResult {
   params: {
     strategy: string
