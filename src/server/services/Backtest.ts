@@ -11,7 +11,7 @@
  * Benchmark: equal-weight average of the whole universe (market proxy).
  */
 
-import { gte } from 'drizzle-orm'
+import { asc, eq, gte } from 'drizzle-orm'
 import Database from '@app/server/Database.ts'
 import * as Schemas from '@app/server/schemas/index.ts'
 
@@ -34,6 +34,7 @@ interface Point {
 
 export interface BacktestResult {
   params: BacktestParams
+  benchmarkLabel: string
   equity: { date: number; strategy: number; benchmark: number }[]
   stats: {
     strategyTotal: number
@@ -54,6 +55,12 @@ function dateIntToTs(d: number): number {
   const m = Math.floor(d / 100) % 100
   const day = d % 100
   return Date.UTC(y, m - 1, day)
+}
+
+/** epoch ms -> yyyymmdd int */
+function dateIntFromTs(epochMs: number): number {
+  const d = new Date(epochMs)
+  return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate()
 }
 
 function lastCloseAt(points: Point[], date: number): number | null {
@@ -157,6 +164,71 @@ export class Backtest {
       return s != null && c != null && c > 0 ? s / c : 0
     }
 
+    // Historical PER (financial_ratios) for the value strategy
+    const ratioRows = await Database.select({
+      code: Schemas.financialRatios.code,
+      period: Schemas.financialRatios.period,
+      per: Schemas.financialRatios.per
+    }).from(Schemas.financialRatios)
+    const ratioSeries = new Map<string, { ymd: number; per: number | null }[]>()
+    for (const r of ratioRows) {
+      if (r.period == null) {
+        continue
+      }
+      const arr = ratioSeries.get(r.code) ?? []
+      arr.push({ ymd: dateIntFromTs(r.period), per: r.per })
+      ratioSeries.set(r.code, arr)
+    }
+    for (const arr of ratioSeries.values()) {
+      arr.sort((a, b) => a.ymd - b.ymd)
+    }
+    const perAt = (code: string, date: number): number | null => {
+      const arr = ratioSeries.get(code)
+      if (!arr || arr.length === 0) {
+        return null
+      }
+      let lo = 0
+      let hi = arr.length - 1
+      let ans = -1
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1
+        if (arr[mid]!.ymd <= date) {
+          ans = mid
+          lo = mid + 1
+        } else {
+          hi = mid - 1
+        }
+      }
+      return ans >= 0 ? arr[ans]!.per : null
+    }
+    // IHSG COMPOSITE levels for the benchmark
+    const idxRows = await Database.select({
+      date: Schemas.indexDaily.date,
+      value: Schemas.indexDaily.value
+    })
+      .from(Schemas.indexDaily)
+      .where(eq(Schemas.indexDaily.code, 'COMPOSITE'))
+      .orderBy(asc(Schemas.indexDaily.date))
+    const idxPoints = idxRows.map((r) => ({ date: r.date, value: r.value }))
+    const idxAt = (date: number): number | null => {
+      if (idxPoints.length === 0) {
+        return null
+      }
+      let lo = 0
+      let hi = idxPoints.length - 1
+      let ans = -1
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1
+        if (idxPoints[mid]!.date <= date) {
+          ans = mid
+          lo = mid + 1
+        } else {
+          hi = mid - 1
+        }
+      }
+      return ans >= 0 ? idxPoints[ans]!.value : null
+    }
+
     const dates = [...new Set(rows.map((r) => r.date))].sort((a, b) => a - b)
     const step = Math.max(5, Math.round(rebalanceWeeks * 5))
     const rebalanceIdx: number[] = []
@@ -168,6 +240,7 @@ export class Backtest {
     }
     const empty: BacktestResult = {
       params,
+      benchmarkLabel: 'Equal-weight market',
       equity: [],
       stats: {
         strategyTotal: 0,
@@ -201,7 +274,7 @@ export class Backtest {
       if (strategy === 'rsi') {
         return rsiAt(pts, date)
       }
-      return codeToInfo.get(code)?.per ?? null
+      return perAt(code, date)
     }
 
     const equity: BacktestResult['equity'] = []
@@ -211,6 +284,7 @@ export class Backtest {
     let maxDrawdown = 0
     let wins = 0
     let periods = 0
+    let indexPeriods = 0
     let lastHoldings: BacktestResult['lastHoldings'] = []
 
     for (let k = 0; k < rebalanceIdx.length - 1; k++) {
@@ -218,6 +292,9 @@ export class Backtest {
       const rn = rebalanceIdx[k + 1]!
       const date = dates[ri]!
       const nextDate = dates[rn]!
+      const idx0 = idxAt(date)
+      const idx1 = idxAt(nextDate)
+      const useIndex = idx0 != null && idx1 != null && idx0 > 0
       const universe: string[] = []
       for (const [code, pts] of series) {
         if (excluded.has(code)) {
@@ -240,14 +317,24 @@ export class Backtest {
         const c0 = lastCloseAt(series.get(code)!, date)!
         const c1 = lastCloseAt(series.get(code)!, nextDate)!
         const fwd = c1 / c0 - 1
-        benchRet += fwd
+        if (!useIndex) {
+          benchRet += fwd
+        }
         scored.push({ code, metric: metricAt(code, date), fwd })
       }
-      const benchAvg = benchRet / universe.length
+      const benchAvg = useIndex ? idx1! / idx0! - 1 : benchRet / universe.length
       benchNav *= 1 + benchAvg
+      if (useIndex) {
+        indexPeriods++
+      }
       const dir = strategy === 'momentum' ? -1 : 1
       const ranked = scored
-        .filter((s) => s.metric != null && Number.isFinite(s.metric))
+        .filter(
+          (s) =>
+            s.metric != null &&
+            Number.isFinite(s.metric) &&
+            (strategy !== 'value' || (s.metric as number) > 0)
+        )
         .sort((a, b) => dir * ((a.metric as number) - (b.metric as number)))
       const picks = ranked.slice(0, topN)
       if (picks.length > 0) {
@@ -281,8 +368,16 @@ export class Backtest {
     const annualized = Math.pow(1 + totalReturn, 1 / years) - 1
     const benchmarkAnnualized = Math.pow(1 + benchTotal, 1 / years) - 1
 
+    const benchmarkLabel =
+      indexPeriods === periods && periods > 0
+        ? 'IHSG (COMPOSITE)'
+        : indexPeriods > 0
+          ? 'IHSG (1Y) + equal-weight (earlier)'
+          : 'Equal-weight market'
+
     return {
       params,
+      benchmarkLabel,
       equity,
       stats: {
         strategyTotal: totalReturn,

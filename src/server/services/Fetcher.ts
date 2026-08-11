@@ -16,5 +16,9 @@ export class Fetcher {
     }
     // Dividend announcements: trailing 6 months (yield + streak window)
     await Services.Dividend.syncRecent(this.client, 6)
+    // Financial ratios: trailing 8 months (quarterly reports — trend + backtest)
+    await Services.FinancialRatio.syncRecent(this.client, 8)
+    // Index levels (IHSG + sectors): benchmark for the backtester
+    await Services.IndexDaily.syncAll(this.client)
   }
 }

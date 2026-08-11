@@ -29,6 +29,8 @@ export interface CandidateRow {
   compositePercentile: number
   divYield?: number | null
   divYears?: number | null
+  roeTrend?: -1 | 0 | 1 | null
+  perTrend?: -1 | 0 | 1 | null
 }
 
 export interface CandidateRowWithSectorRank extends CandidateRow {
@@ -86,6 +88,7 @@ export interface BacktestResult {
     minValue?: number
     excludeNotation?: boolean
   }
+  benchmarkLabel: string
   equity: { date: number; strategy: number; benchmark: number }[]
   stats: {
     strategyTotal: number

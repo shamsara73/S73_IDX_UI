@@ -13,7 +13,7 @@ type Strategy = 'momentum' | 'rsi' | 'value'
 const STRATEGY_LABEL: Record<Strategy, string> = {
   momentum: 'Momentum (beli yang kuat)',
   rsi: 'RSI (beli yang oversold)',
-  value: 'Value (PER termurah, snapshot saat ini)'
+  value: 'Value (PER kuartalan terendah, historis)'
 }
 
 function EquityChart({
@@ -106,8 +106,9 @@ export default function Backtest() {
         <h1 className='idx-h1'>Backtest Strategi</h1>
         <p className='idx-muted'>
           Uji aturan screening terhadap 2 tahun data historis. Rebalance berkala, portofolio
-          equal-weight, dibandingkan dengan benchmark rata-rata pasar. <em>Catatan:</em> strategi
-          value memakai PER snapshot saat ini (data fundamental historis belum tersedia).
+          equal-weight, dibandingkan dengan benchmark IHSG (COMPOSITE) atau rata-rata pasar bila
+          data indeks belum tersedia. Strategi value memakai PER dari laporan keuangan kuartalan
+          historis.
         </p>
 
         <div className='idx-card idx-mb-24'>
@@ -242,6 +243,10 @@ export default function Backtest() {
                 <div className='idx-stat'>
                   <span className='idx-stat-label'>Periode</span>
                   <span className='idx-stat-value'>{stats.periods}</span>
+                </div>
+                <div className='idx-stat'>
+                  <span className='idx-stat-label'>Benchmark</span>
+                  <span className='idx-stat-value'>{result.benchmarkLabel}</span>
                 </div>
               </div>
             </div>

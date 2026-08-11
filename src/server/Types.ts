@@ -149,6 +149,8 @@ export interface CandidateRow extends RankedRowWithFlags {
   compositePercentile: number
   divYield?: number | null
   divYears?: number | null
+  roeTrend?: -1 | 0 | 1 | null
+  perTrend?: -1 | 0 | 1 | null
 }
 
 export interface CandidateRowWithSectorRank extends CandidateRow {

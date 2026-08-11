@@ -13,6 +13,17 @@ import type * as Types from '@app/pages/Types.ts'
 
 const dataColumnCount = 9
 
+function TrendArrow({ trend }: { trend: -1 | 0 | 1 | null | undefined }) {
+  if (trend == null || trend === 0) {
+    return null
+  }
+  return (
+    <span className={trend === 1 ? 'idx-trend-up' : 'idx-trend-down'} aria-hidden>
+      {trend === 1 ? '▲' : '▼'}
+    </span>
+  )
+}
+
 export default function CandidatesTable({
   data,
   limit,
@@ -158,9 +169,11 @@ export default function CandidatesTable({
                   <td className='idx-table-col-sector'>{candidateRow.sector ?? '-'}</td>
                   <td className='idx-table-td-right'>
                     {Utils.Format.formatNum(candidateRow.per, 1)}
+                    <TrendArrow trend={candidateRow.perTrend} />
                   </td>
                   <td className='idx-table-td-right'>
                     {Utils.Format.formatNum(candidateRow.roe, 1)}
+                    <TrendArrow trend={candidateRow.roeTrend} />
                   </td>
                   <td className='idx-table-td-right'>
                     {Utils.Format.formatNum(candidateRow.der, 1)}

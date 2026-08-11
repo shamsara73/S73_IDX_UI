@@ -172,6 +172,56 @@ export async function GET(ctx: Context) {
       divYears: codeToDivYears.get(code)?.size ?? 0
     })
   }
+  // Financial ratio trends: compare the two most recent quarterly ROE/PER per code
+  const ratioRows = await Database.select({
+    code: Schemas.financialRatios.code,
+    period: Schemas.financialRatios.period,
+    roe: Schemas.financialRatios.roe,
+    per: Schemas.financialRatios.per
+  }).from(Schemas.financialRatios)
+  const ratioByCode = new Map<
+    string,
+    { period: number; roe: number | null; per: number | null }[]
+  >()
+  for (const r of ratioRows) {
+    if (r.period == null) {
+      continue
+    }
+    const arr = ratioByCode.get(r.code) ?? []
+    arr.push({ period: r.period, roe: r.roe, per: r.per })
+    ratioByCode.set(r.code, arr)
+  }
+  const codeToRatioTrend = new Map<
+    string,
+    { roeTrend: -1 | 0 | 1 | null; perTrend: -1 | 0 | 1 | null }
+  >()
+  for (const [code, arr] of ratioByCode) {
+    arr.sort((a, b) => a.period - b.period)
+    const last = arr[arr.length - 1]
+    if (last == null) {
+      continue
+    }
+    const prev = arr[arr.length - 2]
+    const trend = (
+      cur: number | null | undefined,
+      prevv: number | null | undefined
+    ): -1 | 0 | 1 | null => {
+      if (cur == null || prevv == null || !Number.isFinite(cur) || !Number.isFinite(prevv)) {
+        return null
+      }
+      if (cur > prevv) {
+        return 1
+      }
+      if (cur < prevv) {
+        return -1
+      }
+      return 0
+    }
+    codeToRatioTrend.set(code, {
+      roeTrend: trend(last.roe, prev?.roe),
+      perTrend: trend(last.per, prev?.per)
+    })
+  }
   const screenerRows = await Database.select({
     code: Schemas.screener.code,
     name: Schemas.screener.name,
@@ -231,6 +281,7 @@ export async function GET(ctx: Context) {
     const fundamentals = codeToFundamentals.get(row.code)
     const changePct = codeToChangePct.get(row.code) ?? null
     const dividend = codeToDividend.get(row.code)
+    const ratioTrend = codeToRatioTrend.get(row.code)
     return {
       ...row,
       hasNotation,
@@ -246,7 +297,9 @@ export async function GET(ctx: Context) {
       changePct,
       compositePercentile: 0,
       divYield: dividend?.divYield ?? null,
-      divYears: dividend?.divYears ?? 0
+      divYears: dividend?.divYears ?? 0,
+      roeTrend: ratioTrend?.roeTrend ?? null,
+      perTrend: ratioTrend?.perTrend ?? null
     }
   })
   let withSectorRankApplied: Types.CandidateRow[] | Types.CandidateRowWithSectorRank[] =
