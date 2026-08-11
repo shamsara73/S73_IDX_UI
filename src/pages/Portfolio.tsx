@@ -186,13 +186,13 @@ export default function Portfolio() {
             <div className='idx-stat'>
               <span className='idx-stat-label'>P&L</span>
               <span className={`idx-stat-value ${pnlClass(summary.pnl)}`}>
-                {Utils.formatRp(summary.pnl)} ({Utils.formatPct(summary.pnlPct)})
+                {Utils.formatRp(summary.pnl)} ({Utils.formatPct(summary.pnlPct != null ? summary.pnlPct * 100 : null)})
               </span>
             </div>
             <div className='idx-stat'>
               <span className='idx-stat-label'>Dividen 12 bulan</span>
               <span className='idx-stat-value'>
-                {Utils.formatRp(summary.divAccrual)} ({Utils.formatPct(summary.divYieldOnCost)})
+                {Utils.formatRp(summary.divAccrual)} ({Utils.formatPct(summary.divYieldOnCost != null ? summary.divYieldOnCost * 100 : null)})
               </span>
             </div>
           </div>
@@ -249,7 +249,9 @@ export default function Portfolio() {
                         <td className='idx-table-td-right'>{Utils.formatRp(row.costBasis)}</td>
                         <td className='idx-table-td-right'>{row.marketValue != null ? Utils.formatRp(row.marketValue) : '-'}</td>
                         <td className={`idx-table-td-right ${pnlClass(pnl)}`}>
-                          {pnl != null ? `${Utils.formatRp(pnl)} (${Utils.formatPct(row.pnlPct)})` : '-'}
+                          {pnl != null
+                            ? `${Utils.formatRp(pnl)} (${Utils.formatPct(row.pnlPct != null ? row.pnlPct * 100 : null)})`
+                            : '-'}
                         </td>
                         <td className='idx-table-td-right'>{row.divPerShare12m != null ? Utils.formatRp(row.divPerShare12m) : '-'}</td>
                         <td className='idx-table-td-right'>{row.divAccrual != null ? Utils.formatRp(row.divAccrual) : '-'}</td>
