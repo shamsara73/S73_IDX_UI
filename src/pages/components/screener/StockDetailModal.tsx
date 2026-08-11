@@ -7,7 +7,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { BarChart2, LineChart as LineChartIcon, TrendingUp, X } from 'lucide-react'
+import { BarChart2, LineChart as LineChartIcon, Sparkles, TrendingUp, X } from 'lucide-react'
 import {
   Area,
   AreaChart,
@@ -65,6 +65,60 @@ function buildRsiChartData(rsiData: Types.RsiResponse | null): {
   const chartData = Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date, 'en'))
   const hasSector = chartData.some((d) => d.sectorRsi != null)
   return { chartData, hasSector }
+}
+
+function AiExplainView({ code }: { code: string }) {
+  const [text, setText] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (code === '') {
+      setLoading(false)
+      return
+    }
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+    setText(null)
+    fetch(`/api/explain?code=${encodeURIComponent(code)}`)
+      .then((res) => res.json())
+      .then((json: { text?: string; error?: string }) => {
+        if (cancelled) {
+          return
+        }
+        if (json.error != null && json.error !== '') {
+          setError(json.error)
+        } else {
+          setText(json.text ?? null)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError('Gagal memuat analisis AI')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [code])
+
+  return (
+    <div className='idx-detail-block'>
+      {loading ? (
+        <p className='idx-p-muted'>Menyusun analisis AI...</p>
+      ) : error != null ? (
+        <p className='idx-p-muted'>{error}</p>
+      ) : (
+        <p className='idx-ai-explain'>{text ?? 'Tidak ada analisis tersedia.'}</p>
+      )}
+    </div>
+  )
 }
 
 export default function StockDetailModal({
@@ -177,6 +231,16 @@ export default function StockDetailModal({
                 >
                   <TrendingUp size={16} aria-hidden />
                   <span>Analisa Teknikal</span>
+                </button>
+                <button
+                  type='button'
+                  className={`idx-tab idx-tab-inline ${
+                    activeTab === 'ai' ? 'idx-tab-active' : ''
+                  }`}
+                  onClick={() => setActiveTab('ai')}
+                >
+                  <Sparkles size={16} aria-hidden />
+                  <span>AI</span>
                 </button>
               </div>
               {activeTab === 'fundamental' && (
@@ -673,6 +737,9 @@ export default function StockDetailModal({
                     )}
                   </div>
                 </>
+              )}
+              {activeTab === 'ai' && (
+                <AiExplainView code={detail?.code ?? ''} />
               )}
             </>
           )}

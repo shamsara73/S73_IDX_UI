@@ -92,3 +92,11 @@
   font-size: 14px;
   text-align: center;
 }
+
+.idx-ai-explain {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--idx-text-primary, #0f172a);
+  white-space: pre-line;
+  margin: 0;
+}

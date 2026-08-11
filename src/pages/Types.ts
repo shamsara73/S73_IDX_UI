@@ -168,7 +168,7 @@ export interface DashboardHeaderProps {
   loading?: boolean
 }
 
-export type DetailTab = 'fundamental' | 'technical'
+export type DetailTab = 'fundamental' | 'technical' | 'ai'
 
 export interface FilterPanelProps {
   params: CandidatesParams
