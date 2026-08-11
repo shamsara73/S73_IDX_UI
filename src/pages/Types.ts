@@ -58,6 +58,8 @@ export interface CandidatesParams {
   momentumMin?: number
   divYieldMin?: number
   divYearsMin?: number
+  sortBy?: string
+  sortDir?: 'asc' | 'desc'
   withSectorRank?: boolean
   sector?: string
   search?: string
@@ -150,6 +152,9 @@ export interface CandidatesTableProps {
   emptyMessage?: string
   watchlistCodes?: string[]
   onWatchlistToggle?: (code: string, row?: CandidateTableRow) => void
+  sortBy?: string | undefined
+  sortDir?: 'asc' | 'desc' | undefined
+  onSortChange?: ((sortBy: string, sortDir: 'asc' | 'desc') => void) | undefined
 }
 
 export interface ClientOptions {

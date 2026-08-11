@@ -22,7 +22,7 @@ export async function GET(ctx: Context) {
   const excludeNotationRaw = ctx.get.query('excludeNotation')
   const excludeCorpActionRaw = ctx.get.query('excludeCorpAction')
   const excludeUmaRaw = ctx.get.query('excludeUma')
-  const minValue = Utils.parseNumber(Utils.queryString(minValueRaw))
+  let minValue = Utils.parseNumber(Utils.queryString(minValueRaw))
   const minVolume = Utils.parseNumber(Utils.queryString(minVolumeRaw))
   let excludeNotation = Utils.parseBoolean(Utils.queryString(excludeNotationRaw))
   let excludeCorpAction = Utils.parseBoolean(Utils.queryString(excludeCorpActionRaw))
@@ -66,6 +66,10 @@ export async function GET(ctx: Context) {
     }
     if (!Utils.queryParamSent(momentumWeekRaw)) {
       momentumWeek = 26
+    }
+    // Professional default: require meaningful liquidity (Rp 500jt daily value)
+    if (!Utils.queryParamSent(minValueRaw)) {
+      minValue = 500000000
     }
   }
   const { limit, offset } = Utils.parseLimitOffset(
@@ -365,6 +369,41 @@ export async function GET(ctx: Context) {
       return (
         code.includes(searchParam) || name.includes(searchParam) || sector.includes(searchParam)
       )
+    })
+  }
+  // Server-side column sorting (whitelist)
+  const sortByParam = Utils.queryString(ctx.get.query('sortBy'))?.trim()
+  const sortDirParam = Utils.queryString(ctx.get.query('sortDir'))?.trim().toLowerCase()
+  const sortWhitelist: Record<string, (row: Types.CandidateRow) => number | null> = {
+    per: (row) => row.per ?? null,
+    roe: (row) => row.roe ?? null,
+    der: (row) => row.der ?? null,
+    week26PC: (row) => row.week26PC ?? null,
+    week52PC: (row) => row.week52PC ?? null,
+    divYield: (row) => (row.divYield != null ? row.divYield * 100 : null),
+    divYears: (row) => row.divYears ?? null,
+    compositeScore: (row) => row.compositeScore ?? null,
+    valueScore: (row) => row.valueScore ?? null,
+    qualityScore: (row) => row.qualityScore ?? null,
+    momentumScore: (row) => row.momentumScore ?? null,
+    changePct: (row) => row.changePct ?? null
+  }
+  if (sortByParam != null && sortByParam in sortWhitelist) {
+    const accessor = sortWhitelist[sortByParam]!
+    const dir = sortDirParam === 'asc' ? 1 : -1
+    filteredCandidates = [...filteredCandidates].sort((a, b) => {
+      const av = accessor(a)
+      const bv = accessor(b)
+      if (av == null && bv == null) {
+        return 0
+      }
+      if (av == null) {
+        return 1
+      }
+      if (bv == null) {
+        return -1
+      }
+      return dir * (av - bv)
     })
   }
   const totalCount = filteredCandidates.length

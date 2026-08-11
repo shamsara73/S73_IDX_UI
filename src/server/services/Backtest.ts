@@ -141,6 +141,39 @@ export class Backtest {
       arr.sort((a, b) => a.date - b.date)
     }
 
+    // Split adjustment: multiply pre-split closes by 1/ratio (newest -> oldest)
+    // so momentum is not distorted across corporate actions.
+    const splitRows = await Database.select({
+      code: Schemas.stockSplits.code,
+      ratio: Schemas.stockSplits.ratio,
+      listingDate: Schemas.stockSplits.listingDate
+    }).from(Schemas.stockSplits)
+    const splitByCode = new Map<string, { ratio: number; listingDate: number }[]>()
+    for (const s of splitRows) {
+      if (s.ratio == null || s.ratio <= 0 || s.listingDate == null) {
+        continue
+      }
+      const arr = splitByCode.get(s.code) ?? []
+      arr.push({ ratio: s.ratio, listingDate: s.listingDate })
+      splitByCode.set(s.code, arr)
+    }
+    for (const [code, arr] of splitByCode) {
+      const pts = series.get(code)
+      if (!pts || pts.length === 0) {
+        continue
+      }
+      arr.sort((a, b) => a.listingDate - b.listingDate)
+      for (const s of [...arr].reverse()) {
+        const splitYmd = dateIntFromTs(s.listingDate)
+        const factor = 1 / s.ratio
+        for (const p of pts) {
+          if (p.date < splitYmd) {
+            p.close *= factor
+          }
+        }
+      }
+    }
+
     const screenerRows = await Database.select({
       code: Schemas.screener.code,
       name: Schemas.screener.name,

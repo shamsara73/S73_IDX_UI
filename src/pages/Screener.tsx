@@ -44,6 +44,8 @@ export default function Screener() {
   const lastSearchForRequestRef = useRef<string>('')
   const { data: generalData } = Hooks.useGeneral()
   const { watchlistRows, watchlistCodes, toggleWatchlist } = Hooks.useWatchlist()
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc' | undefined>(undefined)
   const [savedScreens, setSavedScreens] = useState<Types.SavedScreen[]>([])
   const [screenName, setScreenName] = useState('')
   useEffect(() => {
@@ -170,6 +172,13 @@ export default function Screener() {
     setSectorFilter('')
     setSearchQuery('')
     setSearchForRequest('')
+  }, [])
+
+  const handleSortChange = useCallback((newSortBy: string, newSortDir: 'asc' | 'desc') => {
+    setSortBy(newSortBy)
+    setSortDir(newSortDir)
+    setAppliedParams((prev) => ({ ...prev, sortBy: newSortBy, sortDir: newSortDir, offset: 0 }))
+    setParams((prev) => ({ ...prev, sortBy: newSortBy, sortDir: newSortDir, offset: 0 }))
   }, [])
 
   const handlePageChange = useCallback((newOffset: number) => {
@@ -308,6 +317,9 @@ export default function Screener() {
                     : 'Tidak ada kandidat yang memenuhi filter. Coba longgarkan filter atau klik "Reset Ke Default".'}
                   watchlistCodes={watchlistCodes}
                   onWatchlistToggle={toggleWatchlist}
+                  sortBy={sortBy}
+                  sortDir={sortDir}
+                  onSortChange={handleSortChange}
                 />
               </div>
             </div>

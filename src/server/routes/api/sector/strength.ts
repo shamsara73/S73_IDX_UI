@@ -13,6 +13,15 @@ import Utils from '@app/server/Utils.ts'
 import * as Schemas from '@app/server/schemas/index.ts'
 import type * as Types from '@app/server/Types.ts'
 
+function medianOf(values: number[]): number {
+  if (values.length === 0) {
+    return 0
+  }
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 0 ? (sorted[mid - 1]! + sorted[mid]!) / 2 : sorted[mid]!
+}
+
 export async function GET(ctx: Context) {
   const week = Utils.parseWeek(Utils.queryString(ctx.get.query('week')))
   const source = Utils.queryString(ctx.get.query('source'))
@@ -73,13 +82,16 @@ export async function GET(ctx: Context) {
       if (sector == null) {
         continue
       }
+      // Skip implausible returns (unadjusted splits / data glitches)
+      if (!Number.isFinite(returnPc) || Math.abs(returnPc) > 10) {
+        continue
+      }
       Utils.pushToMapList(bySector, sector, returnPc)
     }
     const sectorStrengthRows: Types.SectorStrengthRow[] = []
     for (const sector of allSectorsOhlc) {
       const momentumValues = bySector.get(sector) ?? []
-      const sum = momentumValues.reduce((acc, momentumPct) => acc + momentumPct, 0)
-      const avgMomentum = momentumValues.length > 0 ? sum / momentumValues.length : 0
+      const avgMomentum = medianOf(momentumValues)
       sectorStrengthRows.push({
         sector,
         avgMomentum: Utils.round3(avgMomentum),
@@ -108,14 +120,17 @@ export async function GET(ctx: Context) {
     if (momentumValue == null || !Number.isFinite(momentumValue)) {
       continue
     }
+    // Skip implausible momentum values (data glitches / unadjusted actions)
+    if (Math.abs(momentumValue) > 10) {
+      continue
+    }
     const sector = row.sector.trim()
     Utils.pushToMapList(bySector, sector, momentumValue)
   }
   const sectorStrengthRows: Types.SectorStrengthRow[] = []
   for (const sector of allSectors) {
     const momentumValues = bySector.get(sector) ?? []
-    const sum = momentumValues.reduce((acc, momentumPct) => acc + momentumPct, 0)
-    const avgMomentum = momentumValues.length > 0 ? sum / momentumValues.length : 0
+    const avgMomentum = medianOf(momentumValues)
     sectorStrengthRows.push({
       sector,
       avgMomentum: Utils.round3(avgMomentum),

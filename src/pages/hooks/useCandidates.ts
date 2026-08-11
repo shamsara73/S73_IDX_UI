@@ -57,6 +57,12 @@ function buildQueryParams(
   if (params.momentumMin != null) {
     queryParams['momentumMin'] = params.momentumMin
   }
+  if (params.sortBy != null && params.sortBy !== '') {
+    queryParams['sortBy'] = params.sortBy
+  }
+  if (params.sortDir != null) {
+    queryParams['sortDir'] = params.sortDir
+  }
   if (params.withSectorRank === true) {
     queryParams['withSectorRank'] = true
   }

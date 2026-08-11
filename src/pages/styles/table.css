@@ -239,6 +239,27 @@
   min-width: 56px;
 }
 
+.idx-sort-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.idx-sort-btn:hover {
+  color: var(--idx-accent, #2563eb);
+}
+
+.idx-sort-active {
+  color: var(--idx-accent, #2563eb);
+  font-weight: 600;
+}
+
 .idx-trend-up {
   color: #16a34a;
   font-size: 10px;

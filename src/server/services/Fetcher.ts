@@ -20,5 +20,7 @@ export class Fetcher {
     await Services.FinancialRatio.syncRecent(this.client, 8)
     // Index levels (IHSG + sectors): benchmark for the backtester
     await Services.IndexDaily.syncAll(this.client)
+    // Stock splits (trailing 12 months): price adjustment for the backtester
+    await Services.Split.syncRecent(this.client, 12)
   }
 }

@@ -45,22 +45,42 @@ export class Composite {
     }
   }
 
-  private static minMaxNormalize(values: number[]): Map<number, number> {
-    const filtered = values.filter((value) => Number.isFinite(value))
-    if (filtered.length === 0) {
+  /** Rank-based percentile (0..1) — robust to outliers, unlike min-max. */
+  private static percentileRank(values: number[]): Map<number, number> {
+    const finite = values.filter((value) => Number.isFinite(value))
+    if (finite.length === 0) {
       return new Map()
     }
-    const min = Math.min(...filtered)
-    const max = Math.max(...filtered)
-    const span = max - min
-    const valueToNormalizedMap = new Map<number, number>()
+    const sorted = [...finite].sort((a, b) => a - b)
+    const n = sorted.length
+    const rank = new Map<number, number>()
     for (const value of values) {
       if (!Number.isFinite(value)) {
         continue
       }
-      valueToNormalizedMap.set(value, span === 0 ? 0.5 : (value - min) / span)
+      let lo = 0
+      let hi = n - 1
+      let ans = -1
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1
+        if (sorted[mid]! <= value) {
+          ans = mid
+          lo = mid + 1
+        } else {
+          hi = mid - 1
+        }
+      }
+      rank.set(value, (ans + 1) / n)
     }
-    return valueToNormalizedMap
+    return rank
+  }
+
+  /** Sanitize a momentum value: implausible extremes (data glitches) -> null. */
+  private static sanitizePc(value: number | null): number | null {
+    if (value == null || !Number.isFinite(value)) {
+      return null
+    }
+    return Math.abs(value) <= 20 ? value : null
   }
 
   private static averageOf(values: number[]): number {
@@ -79,13 +99,13 @@ export class Composite {
       return []
     }
     const { valueWeight, qualityWeight, momentumWeight } = Composite.resolveWeights(weights)
-    const perNorm = Composite.minMaxNormalize(rows.map((row) => row.per ?? NaN))
-    const pbvNorm = Composite.minMaxNormalize(rows.map((row) => row.pbv ?? NaN))
-    const roeNorm = Composite.minMaxNormalize(rows.map((row) => row.roe ?? NaN))
-    const roaNorm = Composite.minMaxNormalize(rows.map((row) => row.roa ?? NaN))
-    const derNorm = Composite.minMaxNormalize(rows.map((row) => row.der ?? NaN))
-    const week26Norm = Composite.minMaxNormalize(rows.map((row) => row.week26PC ?? NaN))
-    const week52Norm = Composite.minMaxNormalize(rows.map((row) => row.week52PC ?? NaN))
+    const perNorm = Composite.percentileRank(rows.map((row) => (row.per != null && row.per > 0 ? row.per : NaN)))
+    const pbvNorm = Composite.percentileRank(rows.map((row) => (row.pbv != null && row.pbv > 0 ? row.pbv : NaN)))
+    const roeNorm = Composite.percentileRank(rows.map((row) => row.roe ?? NaN))
+    const roaNorm = Composite.percentileRank(rows.map((row) => row.roa ?? NaN))
+    const derNorm = Composite.percentileRank(rows.map((row) => (row.der != null && row.der >= 0 ? row.der : NaN)))
+    const week26Norm = Composite.percentileRank(rows.map((row) => Composite.sanitizePc(row.week26PC) ?? NaN))
+    const week52Norm = Composite.percentileRank(rows.map((row) => Composite.sanitizePc(row.week52PC) ?? NaN))
     const scoredRows: Types.RankedRow[] = rows.map((row) => {
       const perScore = row.per != null && row.per > 0 ? 1 - (perNorm.get(row.per) ?? 0) : 0
       const pbvScore = row.pbv != null && row.pbv > 0 ? 1 - (pbvNorm.get(row.pbv) ?? 0) : 0

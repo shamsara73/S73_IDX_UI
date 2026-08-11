@@ -11,7 +11,7 @@ import { ChevronLeft, ChevronRight, Search, Star } from 'lucide-react'
 import * as Utils from '@app/pages/utils/index.ts'
 import type * as Types from '@app/pages/Types.ts'
 
-const dataColumnCount = 9
+const dataColumnCount = 14
 
 function TrendArrow({ trend }: { trend: -1 | 0 | 1 | null | undefined }) {
   if (trend == null || trend === 0) {
@@ -21,6 +21,38 @@ function TrendArrow({ trend }: { trend: -1 | 0 | 1 | null | undefined }) {
     <span className={trend === 1 ? 'idx-trend-up' : 'idx-trend-down'} aria-hidden>
       {trend === 1 ? '▲' : '▼'}
     </span>
+  )
+}
+
+function SortHeader({
+  label,
+  sortKey,
+  sortBy,
+  sortDir,
+  onSortChange
+}: {
+  label: string
+  sortKey: string
+  sortBy?: string | undefined
+  sortDir?: 'asc' | 'desc' | undefined
+  onSortChange?: ((sortBy: string, sortDir: 'asc' | 'desc') => void) | undefined
+}) {
+  if (onSortChange == null) {
+    return <th className='idx-table-th-right'>{label}</th>
+  }
+  const active = sortBy === sortKey
+  const nextDir: 'asc' | 'desc' = active && sortDir === 'asc' ? 'desc' : 'asc'
+  return (
+    <th className='idx-table-th-right'>
+      <button
+        type='button'
+        className={`idx-sort-btn${active ? ' idx-sort-active' : ''}`}
+        onClick={() => onSortChange(sortKey, nextDir)}
+      >
+        {label}
+        <span aria-hidden>{active ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}</span>
+      </button>
+    </th>
   )
 }
 
@@ -38,7 +70,10 @@ export default function CandidatesTable({
   error = null,
   emptyMessage,
   watchlistCodes,
-  onWatchlistToggle
+  onWatchlistToggle,
+  sortBy,
+  sortDir,
+  onSortChange
 }: Types.CandidatesTableProps) {
   const hasWatchlist = watchlistCodes != null && onWatchlistToggle != null
   const columnCount = hasWatchlist ? dataColumnCount + 1 : dataColumnCount
@@ -101,14 +136,17 @@ export default function CandidatesTable({
               <th className='idx-table-col-kode'>Kode</th>
               <th className='idx-table-col-nama'>Nama Emiten</th>
               <th className='idx-table-col-sector'>Sektor</th>
-              <th className='idx-table-th-right'>PER</th>
-              <th className='idx-table-th-right'>ROE</th>
-              <th className='idx-table-th-right'>DER</th>
-              <th className='idx-table-th-right'>Div Yield (%)</th>
-              <th className='idx-table-th-right'>Div Yrs</th>
-              <th className='idx-table-th-right'>26w (%)</th>
-              <th className='idx-table-th-right'>52w (%)</th>
-              <th className='idx-table-th-right'>Comp (%)</th>
+              <SortHeader label='PER' sortKey='per' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
+              <SortHeader label='ROE' sortKey='roe' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
+              <SortHeader label='DER' sortKey='der' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
+              <SortHeader label='Div Yield (%)' sortKey='divYield' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
+              <SortHeader label='Div Yrs' sortKey='divYears' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
+              <SortHeader label='26w (%)' sortKey='week26PC' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
+              <SortHeader label='52w (%)' sortKey='week52PC' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
+              <SortHeader label='Comp (%)' sortKey='compositeScore' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
+              <SortHeader label='V' sortKey='valueScore' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
+              <SortHeader label='Q' sortKey='qualityScore' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
+              <SortHeader label='M' sortKey='momentumScore' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
             </tr>
           </thead>
           <tbody>
@@ -206,7 +244,28 @@ export default function CandidatesTable({
                     </span>
                   </td>
                   <td className='idx-table-td-right'>
-                    {Utils.Format.formatNum(candidateRow.compositePercentile, 0)}
+                    {Utils.Format.formatNum(
+                      candidateRow.compositePercentile != null ? candidateRow.compositePercentile * 100 : null,
+                      0
+                    )}
+                  </td>
+                  <td className='idx-table-td-right'>
+                    {Utils.Format.formatNum(
+                      candidateRow.valueScore != null ? candidateRow.valueScore * 100 : null,
+                      0
+                    )}
+                  </td>
+                  <td className='idx-table-td-right'>
+                    {Utils.Format.formatNum(
+                      candidateRow.qualityScore != null ? candidateRow.qualityScore * 100 : null,
+                      0
+                    )}
+                  </td>
+                  <td className='idx-table-td-right'>
+                    {Utils.Format.formatNum(
+                      candidateRow.momentumScore != null ? candidateRow.momentumScore * 100 : null,
+                      0
+                    )}
                   </td>
                 </tr>
               ))}
