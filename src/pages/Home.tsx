@@ -37,7 +37,7 @@ function fmtPrice(v: number | null) {
 function MarketCard({ q }: { q: DashboardData['globalMarkets'][0] }) {
   const up = (q.changePct ?? 0) >= 0
   return (
-    <Card className='flex flex-col gap-1 py-3 px-3'>
+    <Card className='flex h-full flex-col justify-between gap-1 py-3 px-3'>
       <span className='text-[11px] font-medium uppercase tracking-wider text-text-muted'>{q.name || q.symbol}</span>
       <span className='text-xl font-bold text-text tabular-nums'>{fmtPrice(q.price)}</span>
       <Badge variant={up ? 'success' : 'danger'} className='w-fit gap-1'>
