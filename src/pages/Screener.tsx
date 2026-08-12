@@ -48,11 +48,34 @@ export default function Screener() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc' | undefined>(undefined)
   const [savedScreens, setSavedScreens] = useState<Types.SavedScreen[]>([])
   const [screenName, setScreenName] = useState('')
+  const [nlQuery, setNlQuery] = useState('')
+  const [nlLoading, setNlLoading] = useState(false)
   useEffect(() => {
     Hooks.fetchApi<{ data: Types.SavedScreen[] }>('/api/screens')
       .then((res) => setSavedScreens(res.data ?? []))
       .catch(() => setSavedScreens([]))
   }, [])
+  const handleNlSearch = useCallback(async () => {
+    const q = nlQuery.trim()
+    if (q === '') return
+    setNlLoading(true)
+    try {
+      const res: { params?: Record<string, unknown>; explanation?: string } =
+        await Hooks.fetchApi(`/api/nl-screen?q=${encodeURIComponent(q)}`)
+      if (res.params != null && Object.keys(res.params).length > 0) {
+        const next: Types.CandidatesParams = { ...defaultParams, ...res.params, offset: 0 }
+        setParams(next)
+        setAppliedParams(next)
+        setSearchQuery('')
+        setSearchForRequest('')
+      }
+    } catch {
+      // ignore
+    } finally {
+      setNlLoading(false)
+    }
+  }, [nlQuery])
+
   const handleSaveScreen = useCallback(async () => {
     const name = screenName.trim()
     if (name === '') {
@@ -234,6 +257,18 @@ export default function Screener() {
           loading={mainTab === 'watchlist' ? false : candidatesLoading}
         />
         <div className='idx-screens-bar'>
+          <input
+            type='text'
+            className='idx-input'
+            placeholder='Cari dengan AI (mis. ROE di atas 15, DER di bawah 1)'
+            value={nlQuery}
+            onChange={(e) => setNlQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleNlSearch() }}
+            disabled={nlLoading}
+          />
+          <button type='button' onClick={handleNlSearch} disabled={nlLoading}>
+            {nlLoading ? '...' : 'Cari'}
+          </button>
           <input
             type='text'
             className='idx-input'

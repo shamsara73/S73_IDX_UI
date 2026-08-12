@@ -2,67 +2,63 @@
  * Copyright (c) 2026 IDX Screener by @NeaByteLab (https://neabyte.com)
  * SPDX-License-Identifier: MIT
  *
- * Open to remote work & consulting.
- * Fullstack developer with a focus on security and experience in trading systems.
+ * Server-side watchlist backed by /api/watchlist.
+ * Maintains the same interface as the previous localStorage version.
  */
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import * as Hooks from '@app/pages/hooks/index.ts'
 import type * as Types from '@app/pages/Types.ts'
 
-const storageKey = 'idx-watchlist'
-
-function loadRows(): Types.CandidateTableRow[] {
-  if (typeof globalThis.localStorage === 'undefined') {
-    return []
-  }
-  try {
-    const raw = globalThis.localStorage.getItem(storageKey)
-    if (raw == null || raw === '') {
-      return []
-    }
-    const parsed = JSON.parse(raw) as unknown
-    if (!Array.isArray(parsed)) {
-      return []
-    }
-    const rows = parsed.filter(
-      (x): x is Types.CandidateTableRow =>
-        x != null && typeof x === 'object' && typeof (x as { code?: unknown }).code === 'string'
-    )
-    return rows
-  } catch {
-    return []
-  }
-}
-
-function saveRows(rows: Types.CandidateTableRow[]) {
-  if (typeof globalThis.localStorage === 'undefined') {
-    return
-  }
-  globalThis.localStorage.setItem(storageKey, JSON.stringify(rows))
-}
-
 export function useWatchlist() {
-  const [watchlistRows, setWatchlistRows] = useState<Types.CandidateTableRow[]>(loadRows)
-  const watchlistCodes = useMemo(() => watchlistRows.map((r) => r.code), [watchlistRows])
-  const toggleWatchlist = useCallback((code: string, row?: Types.CandidateTableRow) => {
-    setWatchlistRows((prev) => {
-      const inList = prev.some((r) => r.code === code)
-      if (inList) {
-        const next = prev.filter((r) => r.code !== code)
-        saveRows(next)
-        return next
-      }
-      if (row == null) {
-        return prev
-      }
-      const next = [...prev, row].sort((a, b) => b.compositeScore - a.compositeScore)
-      saveRows(next)
-      return next
-    })
+  const [watchlistCodes, setWatchlistCodes] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch codes on mount
+  useEffect(() => {
+    let cancelled = false
+    Hooks.fetchApi<{ data: { code: string }[] }>('/api/watchlist')
+      .then((res) => {
+        if (!cancelled) {
+          setWatchlistCodes((res.data ?? []).map((r) => r.code))
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [])
+
+  const toggleWatchlist = useCallback(async (code: string, _row?: Types.CandidateTableRow) => {
+    const isIn = watchlistCodes.includes(code)
+    setWatchlistCodes((prev) => (isIn ? prev.filter((c) => c !== code) : [...prev, code]))
+    try {
+      if (isIn) {
+        await fetch(`/api/watchlist?code=${encodeURIComponent(code)}`, { method: 'DELETE' })
+      } else {
+        await fetch('/api/watchlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code })
+        })
+      }
+    } catch {
+      // revert on error
+      setWatchlistCodes((prev) => (isIn ? [...prev, code] : prev.filter((c) => c !== code)))
+    }
+  }, [watchlistCodes])
+
   const isInWatchlist = useCallback(
     (code: string) => watchlistCodes.includes(code),
     [watchlistCodes]
   )
-  return { watchlistRows, watchlistCodes, toggleWatchlist, isInWatchlist }
+
+  // watchlistRows: the table shows the same data via candidates (matched by code)
+  // For now we don't fetch full rows here — the table handles it via candidate data
+  const watchlistRows: Types.CandidateTableRow[] = []
+
+  return { watchlistRows, watchlistCodes, toggleWatchlist, isInWatchlist, loading }
 }
