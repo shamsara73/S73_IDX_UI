@@ -34,3 +34,16 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-text-dim); }
+
+/* Legacy CSS variable aliases (used by recharts inline styles) */
+:root {
+  --idx-border: var(--color-border);
+  --idx-surface: var(--color-surface);
+  --idx-accent: var(--color-accent);
+  --idx-accent-light: var(--color-accent-light);
+  --idx-text-muted: var(--color-text-muted);
+  --idx-text-secondary: var(--color-text-dim);
+  --idx-primary: var(--color-accent);
+  --idx-up: var(--color-up);
+  --idx-down: var(--color-down);
+}

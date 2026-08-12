@@ -50,16 +50,16 @@ export default function RsiMarketView({
 
   if (loading) {
     return (
-      <div className='idx-card idx-card-center'>
-        <p className='idx-p-muted'>Memuat RSI market...</p>
+      <div className='rounded-lg border border-border bg-surface p-6 text-center'>
+        <p className='text-text-muted m-0'>Memuat RSI market...</p>
       </div>
     )
   }
   if (error) {
     return (
-      <div className='idx-error idx-mt-16'>
+      <div className='text-down mt-4 p-4 bg-down-bg rounded-md text-sm font-semibold'>
         {error}
-        <button type='button' className='idx-btn idx-mt-8' onClick={onRefetch}>
+        <button type='button' className='inline-flex items-center justify-center gap-2 text-sm font-bold py-2.5 px-5 rounded-lg border border-border bg-surface text-text cursor-pointer transition-all duration-200 hover:bg-surface-elevated hover:border-accent hover:text-accent mt-2' onClick={onRefetch}>
           Coba lagi
         </button>
       </div>
@@ -70,17 +70,17 @@ export default function RsiMarketView({
   }
 
   return (
-    <div className='idx-card idx-px-24 idx-py-16'>
-      <div className='idx-card-header'>
-        <h3 className='idx-card-title idx-card-title-with-icon'>
+    <div className='rounded-lg border border-border bg-surface px-6 py-4'>
+      <div className='flex items-center justify-between mb-4'>
+        <h3 className='text-lg font-extrabold text-text flex items-center gap-2'>
           <Activity size={20} aria-hidden />
           <span>Relative Strength (Per Sektor)</span>
         </h3>
       </div>
       {chartData.length === 0
-        ? <p className='idx-p-muted'>Tidak ada data RSI.</p>
+        ? <p className='text-text-muted m-0'>Tidak ada data RSI.</p>
         : (
-          <div className='idx-rsi-chart-wrap'>
+          <div className='min-w-0 w-full min-h-80 overflow-visible'>
             <ResponsiveContainer width='100%' height={Math.max(360, chartData.length * 36)}>
               <BarChart
                 data={chartData}
@@ -94,14 +94,14 @@ export default function RsiMarketView({
                   domain={[0, 100]}
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: 'var(--idx-text-muted)', fontSize: 12 }}
+                  tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}
                   ticks={[0, 25, 50, 75, 100]}
                 />
                 <YAxis
                   type='category'
                   dataKey='sector'
                   width={180}
-                  tick={{ fill: 'var(--idx-text-muted)', fontSize: 12 }}
+                  tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(val) => (val.length > 18 ? `${val.slice(0, 16)}…` : val)}
@@ -116,8 +116,8 @@ export default function RsiMarketView({
                       return null
                     }
                     return (
-                      <div className='idx-foreign-tooltip'>
-                        <div className='idx-foreign-tooltip-label'>
+                      <div className='bg-surface-elevated text-text p-2 px-3 rounded-md text-sm shadow-lg'>
+                        <div className='font-extrabold mb-1'>
                           {Utils.Format.formatTitleCase(p.sector)}
                         </div>
                         <div>
@@ -130,7 +130,7 @@ export default function RsiMarketView({
                     )
                   }}
                 />
-                <Bar dataKey='avg' fill='var(--idx-text-muted)' isAnimationActive={false}>
+                <Bar dataKey='avg' fill='var(--color-text-muted)' isAnimationActive={false}>
                   {chartData.map((row, index) => (
                     <Cell
                       key={row.sector}

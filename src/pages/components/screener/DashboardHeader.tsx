@@ -18,31 +18,31 @@ export default function DashboardHeader({
   loading
 }: Types.DashboardHeaderProps) {
   return (
-    <div className='idx-dashboard-header'>
+    <div className='flex flex-wrap items-end justify-between gap-4 mb-6'>
       <div>
-        <h1 className='idx-dashboard-title'>
+        <h1 className='flex items-center gap-2.5 text-[1.375rem] font-extrabold text-text tracking-tight m-0'>
           <BarChart3 size={28} strokeWidth={2} aria-hidden />
           <span>Screener Saham</span>
         </h1>
-        <p className='idx-dashboard-subtitle'>
+        <p className='text-sm text-text-muted mt-1'>
           Filter Berdasarkan Skor Gabungan: <strong>Valuasi, Kualitas, dan Momentum</strong>
         </p>
       </div>
-      <div className='idx-header-stats'>
-        <div className='idx-header-stat'>
-          <span className='idx-header-stat-label'>Data Kandidat</span>
-          <span className='idx-header-stat-value'>{totalCount.toLocaleString('id-ID')}</span>
+      <div className='flex items-center gap-0 bg-surface border border-border rounded-lg p-3 px-2 pl-5 shadow-sm'>
+        <div className='flex flex-col gap-1 min-w-0'>
+          <span className='text-[10px] font-extrabold uppercase tracking-widest text-text-muted leading-tight'>Data Kandidat</span>
+          <span className='text-lg font-extrabold text-text leading-tight tracking-tight'>{totalCount.toLocaleString('id-ID')}</span>
         </div>
-        <div className='idx-header-stat-sep' aria-hidden='true' />
-        <div className='idx-header-stat'>
-          <span className='idx-header-stat-label'>Tanggal Data</span>
-          <span className='idx-header-stat-value'>
+        <div className='w-px h-7 bg-border mx-5 shrink-0' aria-hidden='true' />
+        <div className='flex flex-col gap-1 min-w-0'>
+          <span className='text-[10px] font-extrabold uppercase tracking-widest text-text-muted leading-tight'>Tanggal Data</span>
+          <span className='text-lg font-extrabold text-text leading-tight tracking-tight'>
             {date ? Utils.Format.formatDateInt(date) : '-'}
           </span>
         </div>
         <button
           type='button'
-          className={`idx-btn idx-header-refresh ${loading ? 'is-loading' : ''}`}
+          className={`inline-flex items-center justify-center gap-2 text-sm font-bold py-2.5 px-5 rounded-lg border border-border bg-surface text-text cursor-pointer transition-all duration-200 hover:bg-surface-elevated hover:border-accent hover:text-accent ml-5 p-2.5 ${loading ? '[&_svg]:opacity-50' : ''}`}
           onClick={onRefresh}
           disabled={loading}
           title='Muat Ulang Data'

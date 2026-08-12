@@ -66,36 +66,36 @@ export default function SectorStrength({
   }, [data])
 
   return (
-    <div className='idx-card idx-sector-card'>
-      <div className='idx-sector-header'>
-        <h3 className='idx-card-title idx-card-title-with-icon'>
+    <div className='rounded-lg border border-border bg-surface p-6'>
+      <div className='flex items-center justify-between mb-4'>
+        <h3 className='text-lg font-extrabold text-text flex items-center gap-2'>
           <Layers size={20} aria-hidden />
           <span>Kekuatan Sektor</span>
         </h3>
-        <div className='idx-tabs'>
+        <div className='flex gap-1 bg-surface-elevated p-1 rounded-lg'>
           <button
             type='button'
-            className={`idx-tab ${week === 26 ? 'idx-tab-active' : ''}`}
+            className={`text-sm font-bold py-2 px-4 rounded-md border-none bg-transparent text-text-muted cursor-pointer transition-all duration-200 hover:text-text ${week === 26 ? 'bg-accent text-background' : ''}`}
             onClick={() => onWeekChange(26)}
           >
             26w
           </button>
           <button
             type='button'
-            className={`idx-tab ${week === 52 ? 'idx-tab-active' : ''}`}
+            className={`text-sm font-bold py-2 px-4 rounded-md border-none bg-transparent text-text-muted cursor-pointer transition-all duration-200 hover:text-text ${week === 52 ? 'bg-accent text-background' : ''}`}
             onClick={() => onWeekChange(52)}
           >
             52w
           </button>
         </div>
       </div>
-      {loading && <div className='idx-loading'>Memuat...</div>}
+      {loading && <div className='text-center py-12 px-6 text-text-muted text-sm font-semibold'>Memuat...</div>}
       {!loading && data && data.length === 0 && (
-        <p className='idx-p-muted idx-py-16'>Tidak ada data sektor.</p>
+        <p className='text-text-muted m-0 py-4'>Tidak ada data sektor.</p>
       )}
       {!loading && data && data.length > 0 && (
         <>
-          <div className='idx-sector-chart-wrap'>
+          <div className='min-w-0 w-full mb-4'>
             <ResponsiveContainer width='100%' height={260}>
               <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
                 <Pie
@@ -133,8 +133,8 @@ export default function SectorStrength({
                     ]
                   }}
                   contentStyle={{
-                    background: 'var(--idx-deep)',
-                    color: 'white',
+                    background: 'var(--color-surface-elevated)',
+                    color: 'var(--color-text)',
                     borderRadius: 12,
                     fontSize: 11
                   }}
@@ -149,21 +149,21 @@ export default function SectorStrength({
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <ul className='idx-sector-list'>
+          <ul className='list-none m-0 p-0'>
             {data
               .filter((sectorRow) => sectorRow.count > 0)
               .map((sectorRow) => {
                 const isUp = sectorRow.avgMomentum >= 0
                 const isDown = sectorRow.avgMomentum < 0
                 const rowClassName = isUp
-                  ? 'idx-sector-up'
+                  ? 'bg-up-bg text-up'
                   : isDown
-                  ? 'idx-sector-down'
-                  : 'idx-sector-neutral'
+                  ? 'bg-down-bg text-down'
+                  : 'bg-surface-elevated text-text-muted'
                 return (
-                  <li key={sectorRow.sector} className={`idx-sector-item ${rowClassName}`}>
+                  <li key={sectorRow.sector} className={`flex items-center justify-between py-3 px-4 rounded-md mb-1.5 text-sm font-semibold ${rowClassName}`}>
                     <span>{sectorRow.sector}</span>
-                    <span className='idx-sector-pct'>
+                    <span className='font-extrabold'>
                       {Utils.Format.formatPct(sectorRow.avgMomentum)}
                     </span>
                   </li>

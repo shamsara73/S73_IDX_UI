@@ -13,6 +13,7 @@ import {
   AreaChart,
   Bar,
   BarChart,
+  CartesianGrid,
   Cell,
   Line,
   LineChart,
@@ -93,15 +94,15 @@ function IntradayChart({ code }: { code: string }) {
     return () => { cancelled = true }
   }, [code])
 
-  if (loading) return <p className='idx-p-muted'>Memuat chart intraday...</p>
-  if (bars.length === 0) return <p className='idx-p-muted'>Data intraday tidak tersedia.</p>
+  if (loading) return <p className='text-text-muted text-sm'>Memuat chart intraday...</p>
+  if (bars.length === 0) return <p className='text-text-muted text-sm'>Data intraday tidak tersedia.</p>
 
   const orHigh = openingRange?.high ?? null
   const orLow = openingRange?.low ?? null
 
   return (
-    <div className='idx-detail-block idx-mb-16'>
-      <label className='idx-form-label'>Chart Intraday Hari Ini ({bars.length} titik)</label>
+    <div className='rounded-lg border border-border bg-surface-elevated p-4 mb-4'>
+      <label className='text-xs font-medium text-text-muted'>Chart Intraday Hari Ini ({bars.length} titik)</label>
       <ResponsiveContainer width='100%' height={200}>
         <AreaChart data={bars} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
           <CartesianGrid strokeDasharray='3 3' stroke='var(--idx-border, #e2e8f0)' />
@@ -121,7 +122,7 @@ function IntradayChart({ code }: { code: string }) {
         </AreaChart>
       </ResponsiveContainer>
       {orHigh != null && orLow != null && (
-        <p className='idx-p-muted' style={{ fontSize: 12, marginTop: 4 }}>
+        <p className='text-text-muted text-xs mt-1'>
           Opening Range (30 menit pertama): {orLow.toLocaleString('id-ID')} – {orHigh.toLocaleString('id-ID')}
         </p>
       )}
@@ -171,13 +172,13 @@ function AiExplainView({ code }: { code: string }) {
   }, [code])
 
   return (
-    <div className='idx-detail-block'>
+    <div className='rounded-lg border border-border bg-surface-elevated p-4'>
       {loading ? (
-        <p className='idx-p-muted'>Menyusun analisis AI...</p>
+        <p className='text-text-muted text-sm'>Menyusun analisis AI...</p>
       ) : error != null ? (
-        <p className='idx-p-muted'>{error}</p>
+        <p className='text-text-muted text-sm'>{error}</p>
       ) : (
-        <p className='idx-ai-explain'>{text ?? 'Tidak ada analisis tersedia.'}</p>
+        <p className='text-text text-sm leading-relaxed whitespace-pre-wrap'>{text ?? 'Tidak ada analisis tersedia.'}</p>
       )}
     </div>
   )
@@ -246,38 +247,38 @@ export default function StockDetailModal({
   }, [onClose])
 
   return (
-    <div className='idx-modal-overlay' onClick={handleClose} role='presentation'>
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm' onClick={handleClose} role='presentation'>
       <div
-        className='idx-modal'
+        className='max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-xl border border-border bg-surface shadow-2xl'
         onClick={(event) => event.stopPropagation()}
         role='dialog'
         aria-modal='true'
       >
-        <div className='idx-modal-header'>
-          <h2 className='idx-modal-title idx-modal-title-with-icon'>
+        <div className='flex items-center justify-between px-6 py-4 border-b border-border'>
+          <h2 className='text-lg font-semibold text-text flex items-center gap-2'>
             <LineChartIcon size={22} aria-hidden />
             <span>{detail ? `${detail.code}: ${detail.name ?? ''}` : 'Detail Saham'}</span>
           </h2>
           <button
             ref={closeButtonRef}
             type='button'
-            className='idx-modal-close'
+            className='text-text-muted hover:text-text transition-colors p-1 rounded-lg hover:bg-surface-elevated'
             onClick={handleClose}
             aria-label='Tutup Modal'
           >
             <X size={20} aria-hidden />
           </button>
         </div>
-        <div className='idx-modal-body'>
-          {loading && <div className='idx-loading'>Memuat...</div>}
-          {error && <div className='idx-error'>{error}</div>}
+        <div className='p-6'>
+          {loading && <div className='flex items-center justify-center py-8 text-text-muted text-sm'>Memuat...</div>}
+          {error && <div className='text-down text-sm p-4 rounded-lg border border-down/30 bg-down/10'>{error}</div>}
           {detail && !loading && (
             <>
-              <div className='idx-tabs idx-mb-16'>
+              <div className='flex gap-1 mb-4'>
                 <button
                   type='button'
-                  className={`idx-tab idx-tab-inline ${
-                    activeTab === 'fundamental' ? 'idx-tab-active' : ''
+                  className={`px-4 py-2 text-sm rounded-lg text-text-muted transition-colors cursor-pointer border-b-2 border-transparent ${
+                    activeTab === 'fundamental' ? 'text-accent border-accent bg-accent/10' : ''
                   }`}
                   onClick={() => setActiveTab('fundamental')}
                 >
@@ -286,8 +287,8 @@ export default function StockDetailModal({
                 </button>
                 <button
                   type='button'
-                  className={`idx-tab idx-tab-inline ${
-                    activeTab === 'technical' ? 'idx-tab-active' : ''
+                  className={`px-4 py-2 text-sm rounded-lg text-text-muted transition-colors cursor-pointer border-b-2 border-transparent ${
+                    activeTab === 'technical' ? 'text-accent border-accent bg-accent/10' : ''
                   }`}
                   onClick={() => setActiveTab('technical')}
                 >
@@ -296,8 +297,8 @@ export default function StockDetailModal({
                 </button>
                 <button
                   type='button'
-                  className={`idx-tab idx-tab-inline ${
-                    activeTab === 'ai' ? 'idx-tab-active' : ''
+                  className={`px-4 py-2 text-sm rounded-lg text-text-muted transition-colors cursor-pointer border-b-2 border-transparent ${
+                    activeTab === 'ai' ? 'text-accent border-accent bg-accent/10' : ''
                   }`}
                   onClick={() => setActiveTab('ai')}
                 >
@@ -307,125 +308,125 @@ export default function StockDetailModal({
               </div>
               {activeTab === 'fundamental' && (
                 <>
-                  <div className='idx-detail-sections'>
-                    <section className='idx-detail-section'>
-                      <h4 className='idx-detail-section-title'>Klasifikasi</h4>
-                      <div className='idx-detail-grid'>
-                        <div className='idx-detail-item idx-detail-item-full'>
-                          <label>Sektor / Industri</label>
-                          <span>{[detail.sector ?? '-', detail.industry ?? '-'].join(' / ')}</span>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+                    <section className='rounded-lg border border-border bg-surface-elevated p-4'>
+                      <h4 className='text-xs font-semibold text-text-muted uppercase tracking-wider mb-3'>Klasifikasi</h4>
+                      <div className='grid grid-cols-2 gap-4'>
+                        <div className='space-y-1 col-span-2'>
+                          <label className='text-xs font-medium text-text-muted'>Sektor / Industri</label>
+                          <span className='text-text text-sm'>{[detail.sector ?? '-', detail.industry ?? '-'].join(' / ')}</span>
                         </div>
                       </div>
                     </section>
-                    <section className='idx-detail-section'>
-                      <h4 className='idx-detail-section-title'>Valuasi</h4>
-                      <div className='idx-detail-grid'>
-                        <div className='idx-detail-item'>
-                          <label>PER</label>
-                          <span>{Utils.Format.formatNum(detail.per, 1)}</span>
+                    <section className='rounded-lg border border-border bg-surface-elevated p-4'>
+                      <h4 className='text-xs font-semibold text-text-muted uppercase tracking-wider mb-3'>Valuasi</h4>
+                      <div className='grid grid-cols-2 gap-4'>
+                        <div className='space-y-1'>
+                          <label className='text-xs font-medium text-text-muted'>PER</label>
+                          <span className='text-text text-sm'>{Utils.Format.formatNum(detail.per, 1)}</span>
                         </div>
-                        <div className='idx-detail-item'>
-                          <label>PBV</label>
-                          <span>{Utils.Format.formatNum(detail.pbv, 1)}</span>
-                        </div>
-                      </div>
-                    </section>
-                    <section className='idx-detail-section'>
-                      <h4 className='idx-detail-section-title'>Profitabilitas</h4>
-                      <div className='idx-detail-grid'>
-                        <div className='idx-detail-item'>
-                          <label>ROE</label>
-                          <span>{Utils.Format.formatNum(detail.roe, 1)}</span>
-                        </div>
-                        <div className='idx-detail-item'>
-                          <label>ROA</label>
-                          <span>{Utils.Format.formatNum(detail.roa, 1)}</span>
+                        <div className='space-y-1'>
+                          <label className='text-xs font-medium text-text-muted'>PBV</label>
+                          <span className='text-text text-sm'>{Utils.Format.formatNum(detail.pbv, 1)}</span>
                         </div>
                       </div>
                     </section>
-                    <section className='idx-detail-section'>
-                      <h4 className='idx-detail-section-title'>Leverage</h4>
-                      <div className='idx-detail-grid'>
-                        <div className='idx-detail-item'>
-                          <label>DER</label>
-                          <span>{Utils.Format.formatNum(detail.der, 1)}</span>
+                    <section className='rounded-lg border border-border bg-surface-elevated p-4'>
+                      <h4 className='text-xs font-semibold text-text-muted uppercase tracking-wider mb-3'>Profitabilitas</h4>
+                      <div className='grid grid-cols-2 gap-4'>
+                        <div className='space-y-1'>
+                          <label className='text-xs font-medium text-text-muted'>ROE</label>
+                          <span className='text-text text-sm'>{Utils.Format.formatNum(detail.roe, 1)}</span>
+                        </div>
+                        <div className='space-y-1'>
+                          <label className='text-xs font-medium text-text-muted'>ROA</label>
+                          <span className='text-text text-sm'>{Utils.Format.formatNum(detail.roa, 1)}</span>
                         </div>
                       </div>
                     </section>
-                    <section className='idx-detail-section'>
-                      <h4 className='idx-detail-section-title'>Likuiditas</h4>
-                      <div className='idx-detail-grid'>
-                        <div className='idx-detail-item'>
-                          <label>Value</label>
-                          <span>{Utils.Format.formatRp(detail.value)}</span>
+                    <section className='rounded-lg border border-border bg-surface-elevated p-4'>
+                      <h4 className='text-xs font-semibold text-text-muted uppercase tracking-wider mb-3'>Leverage</h4>
+                      <div className='grid grid-cols-2 gap-4'>
+                        <div className='space-y-1'>
+                          <label className='text-xs font-medium text-text-muted'>DER</label>
+                          <span className='text-text text-sm'>{Utils.Format.formatNum(detail.der, 1)}</span>
                         </div>
-                        <div className='idx-detail-item'>
-                          <label>Volume</label>
-                          <span>{Utils.Format.formatNum(detail.volume, 0)}</span>
+                      </div>
+                    </section>
+                    <section className='rounded-lg border border-border bg-surface-elevated p-4'>
+                      <h4 className='text-xs font-semibold text-text-muted uppercase tracking-wider mb-3'>Likuiditas</h4>
+                      <div className='grid grid-cols-2 gap-4'>
+                        <div className='space-y-1'>
+                          <label className='text-xs font-medium text-text-muted'>Value</label>
+                          <span className='text-text text-sm'>{Utils.Format.formatRp(detail.value)}</span>
+                        </div>
+                        <div className='space-y-1'>
+                          <label className='text-xs font-medium text-text-muted'>Volume</label>
+                          <span className='text-text text-sm'>{Utils.Format.formatNum(detail.volume, 0)}</span>
                         </div>
                       </div>
                     </section>
                   </div>
-                  <div className='idx-detail-block'>
-                    <label className='idx-form-label'>Skor</label>
-                    <table className='idx-detail-table'>
+                  <div className='rounded-lg border border-border bg-surface-elevated p-4'>
+                    <label className='text-xs font-medium text-text-muted'>Skor</label>
+                    <table className='w-full text-sm'>
                       <thead>
                         <tr>
-                          <th>Value</th>
-                          <th>Quality</th>
-                          <th>Momentum</th>
-                          <th>Composite</th>
+                          <th className='text-left text-text-muted'>Value</th>
+                          <th className='text-left text-text-muted'>Quality</th>
+                          <th className='text-left text-text-muted'>Momentum</th>
+                          <th className='text-left text-text-muted'>Composite</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td>{Utils.Format.formatNum(detail.valueScore, 3)}</td>
-                          <td>{Utils.Format.formatNum(detail.qualityScore, 3)}</td>
-                          <td>{Utils.Format.formatNum(detail.momentumScore, 3)}</td>
-                          <td className='idx-detail-composite-cell'>
+                          <td className='text-text'>{Utils.Format.formatNum(detail.valueScore, 3)}</td>
+                          <td className='text-text'>{Utils.Format.formatNum(detail.qualityScore, 3)}</td>
+                          <td className='text-text'>{Utils.Format.formatNum(detail.momentumScore, 3)}</td>
+                          <td className='font-semibold text-accent'>
                             {Utils.Format.formatNum(detail.compositeScore, 3)}
                           </td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
-                  <div className='idx-detail-block'>
-                    <label className='idx-form-label'>Momentum</label>
-                    <table className='idx-detail-table'>
+                  <div className='rounded-lg border border-border bg-surface-elevated p-4'>
+                    <label className='text-xs font-medium text-text-muted'>Momentum</label>
+                    <table className='w-full text-sm'>
                       <thead>
                         <tr>
-                          <th>4w</th>
-                          <th>13w</th>
-                          <th>26w</th>
-                          <th>52w</th>
+                          <th className='text-left text-text-muted'>4w</th>
+                          <th className='text-left text-text-muted'>13w</th>
+                          <th className='text-left text-text-muted'>26w</th>
+                          <th className='text-left text-text-muted'>52w</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
                           <td
                             className={detail.week4PC != null
-                              ? detail.week4PC >= 0 ? 'idx-pct idx-pct-up' : 'idx-pct idx-pct-down'
+                              ? detail.week4PC >= 0 ? 'text-up' : 'text-down'
                               : ''}
                           >
                             {Utils.Format.formatPct(detail.week4PC ?? null)}
                           </td>
                           <td
                             className={detail.week13PC != null
-                              ? detail.week13PC >= 0 ? 'idx-pct idx-pct-up' : 'idx-pct idx-pct-down'
+                              ? detail.week13PC >= 0 ? 'text-up' : 'text-down'
                               : ''}
                           >
                             {Utils.Format.formatPct(detail.week13PC ?? null)}
                           </td>
                           <td
                             className={detail.week26PC != null
-                              ? detail.week26PC >= 0 ? 'idx-pct idx-pct-up' : 'idx-pct idx-pct-down'
+                              ? detail.week26PC >= 0 ? 'text-up' : 'text-down'
                               : ''}
                           >
                             {Utils.Format.formatPct(detail.week26PC ?? null)}
                           </td>
                           <td
                             className={detail.week52PC != null
-                              ? detail.week52PC >= 0 ? 'idx-pct idx-pct-up' : 'idx-pct idx-pct-down'
+                              ? detail.week52PC >= 0 ? 'text-up' : 'text-down'
                               : ''}
                           >
                             {Utils.Format.formatPct(detail.week52PC ?? null)}
@@ -436,25 +437,25 @@ export default function StockDetailModal({
                   </div>
                   {chartData.length > 0 && (
                     <>
-                      <label className='idx-form-label'>Pergerakan Harga (Close)</label>
-                      <div className='idx-chart-container'>
+                      <label className='text-xs font-medium text-text-muted'>Pergerakan Harga (Close)</label>
+                      <div className='rounded-lg border border-border bg-surface-elevated p-4 h-64'>
                         <ResponsiveContainer width='100%' height='100%'>
                           <AreaChart data={chartData}>
                             <defs>
                               <linearGradient id='detailChartGrad' x1='0' y1='0' x2='0' y2='1'>
                                 <stop
                                   offset='5%'
-                                  stopColor='var(--idx-primary)'
+                                  stopColor='#00ff88'
                                   stopOpacity={0.2}
                                 />
-                                <stop offset='95%' stopColor='var(--idx-primary)' stopOpacity={0} />
+                                <stop offset='95%' stopColor='#00ff88' stopOpacity={0} />
                               </linearGradient>
                             </defs>
                             <XAxis
                               dataKey='date'
                               axisLine={false}
                               tickLine={false}
-                              tick={{ fill: 'var(--idx-text-muted)', fontSize: 10 }}
+                              tick={{ fill: '#94a3b8', fontSize: 10 }}
                             />
                             <YAxis
                               orientation='right'
@@ -462,11 +463,11 @@ export default function StockDetailModal({
                               {...(yDomain !== undefined && { domain: yDomain })}
                               axisLine={false}
                               tickLine={false}
-                              tick={{ fill: 'var(--idx-text-muted)', fontSize: 10 }}
+                              tick={{ fill: '#94a3b8', fontSize: 10 }}
                             />
                             <Tooltip
                               contentStyle={{
-                                background: 'var(--idx-deep)',
+                                background: '#0f172a',
                                 color: 'white',
                                 borderRadius: 12,
                                 fontSize: 12
@@ -475,7 +476,7 @@ export default function StockDetailModal({
                             <Area
                               type='monotone'
                               dataKey='close'
-                              stroke='var(--idx-primary)'
+                              stroke='#00ff88'
                               strokeWidth={2}
                               fill='url(#detailChartGrad)'
                             />
@@ -489,15 +490,15 @@ export default function StockDetailModal({
               {activeTab === 'technical' && (
                 <>
                   <IntradayChart code={detail?.code ?? ''} />
-                  <div className='idx-foreign-header idx-mb-16'>
-                    <label className='idx-form-label'>Periode</label>
-                    <div className='idx-tabs'>
+                  <div className='flex items-center gap-4 mb-4'>
+                    <label className='text-xs font-medium text-text-muted'>Periode</label>
+                    <div className='flex gap-1'>
                       {foreignPeriodOptions.map(({ days, label }) => (
                         <button
                           key={days}
                           type='button'
-                          className={`idx-tab idx-tab-inline ${
-                            foreignPeriodDays === days ? 'idx-tab-active' : ''
+                          className={`px-4 py-2 text-sm rounded-lg text-text-muted transition-colors cursor-pointer border-b-2 border-transparent ${
+                            foreignPeriodDays === days ? 'text-accent border-accent bg-accent/10' : ''
                           }`}
                           onClick={() => setForeignPeriodDays(days)}
                         >
@@ -506,17 +507,17 @@ export default function StockDetailModal({
                       ))}
                     </div>
                   </div>
-                  <div className='idx-detail-block idx-mb-16'>
-                    <label className='idx-form-label'>
+                  <div className='rounded-lg border border-border bg-surface-elevated p-4 mb-4'>
+                    <label className='text-xs font-medium text-text-muted'>
                       RSI (14)
                       {rsiData?.sector != null && rsiData.sector !== '' && (
-                        <span className='idx-text-muted idx-ml-4'>vs Sektor {rsiData.sector}</span>
+                        <span className='text-text-muted ml-1'>vs Sektor {rsiData.sector}</span>
                       )}
                     </label>
-                    {rsiLoading && <div className='idx-loading'>Memuat RSI...</div>}
-                    {rsiError && <div className='idx-error'>{rsiError}</div>}
+                    {rsiLoading && <div className='flex items-center justify-center py-8 text-text-muted text-sm'>Memuat RSI...</div>}
+                    {rsiError && <div className='text-down text-sm p-4 rounded-lg border border-down/30 bg-down/10'>{rsiError}</div>}
                     {!rsiLoading && !rsiError && rsiChartData.chartData.length > 0 && (
-                      <div className='idx-chart-container'>
+                      <div className='rounded-lg border border-border bg-surface-elevated p-4 h-64'>
                         <ResponsiveContainer width='100%' height='100%'>
                           <LineChart
                             data={rsiChartData.chartData}
@@ -526,14 +527,14 @@ export default function StockDetailModal({
                               dataKey='date'
                               axisLine={false}
                               tickLine={false}
-                              tick={{ fill: 'var(--idx-text-muted)', fontSize: 10 }}
+                              tick={{ fill: '#94a3b8', fontSize: 10 }}
                             />
                             <YAxis
                               domain={[0, 100]}
                               orientation='right'
                               axisLine={false}
                               tickLine={false}
-                              tick={{ fill: 'var(--idx-text-muted)', fontSize: 10 }}
+                              tick={{ fill: '#94a3b8', fontSize: 10 }}
                             />
                             <Tooltip
                               content={({ active, payload, label }) => {
@@ -545,21 +546,21 @@ export default function StockDetailModal({
                                   return null
                                 }
                                 return (
-                                  <div className='idx-foreign-tooltip'>
-                                    <div className='idx-foreign-tooltip-label'>
+                                  <div className='bg-surface-elevated border border-border rounded-lg p-3 shadow-lg text-sm'>
+                                    <div className='font-semibold text-text mb-2'>
                                       {Utils.Format.formatTitleCase(String(label))}
                                     </div>
-                                    <div className='idx-tooltip-row'>
-                                      <span className='idx-tooltip-swatch idx-tooltip-swatch-emiten' />
-                                      <span>
+                                    <div className='flex items-center gap-2'>
+                                      <span className='w-3 h-3 rounded-full inline-block bg-accent' />
+                                      <span className='text-text text-sm'>
                                         {Utils.Format.formatTitleCase('RSI (emiten)')}:{' '}
                                         {Utils.Format.formatNum(p.rsi, 2)}
                                       </span>
                                     </div>
                                     {p.sectorRsi != null && (
-                                      <div className='idx-tooltip-row'>
-                                        <span className='idx-tooltip-swatch idx-tooltip-swatch-sector' />
-                                        <span>
+                                      <div className='flex items-center gap-2'>
+                                        <span className='w-3 h-3 rounded-full inline-block bg-text-muted' />
+                                        <span className='text-text text-sm'>
                                           {Utils.Format.formatTitleCase('RSI sektor (rata)')}:{' '}
                                           {Utils.Format.formatNum(p.sectorRsi, 2)}
                                         </span>
@@ -605,15 +606,15 @@ export default function StockDetailModal({
                       </div>
                     )}
                     {!rsiLoading && !rsiError && rsiData && rsiData.data.length === 0 && (
-                      <p className='idx-p-muted'>Tidak ada data RSI untuk periode ini.</p>
+                      <p className='text-text-muted text-sm'>Tidak ada data RSI untuk periode ini.</p>
                     )}
                   </div>
-                  <div className='idx-detail-block idx-mb-16'>
-                    <label className='idx-form-label'>Volume (Bid vs Offer)</label>
-                    {ohlcLoading && <div className='idx-loading'>Memuat volume...</div>}
-                    {ohlcError && <div className='idx-error'>{ohlcError}</div>}
+                  <div className='rounded-lg border border-border bg-surface-elevated p-4 mb-4'>
+                    <label className='text-xs font-medium text-text-muted'>Volume (Bid vs Offer)</label>
+                    {ohlcLoading && <div className='flex items-center justify-center py-8 text-text-muted text-sm'>Memuat volume...</div>}
+                    {ohlcError && <div className='text-down text-sm p-4 rounded-lg border border-down/30 bg-down/10'>{ohlcError}</div>}
                     {!ohlcLoading && !ohlcError && ohlcData && ohlcData.length > 0 && (
-                      <div className='idx-chart-container'>
+                      <div className='rounded-lg border border-border bg-surface-elevated p-4 h-64'>
                         <ResponsiveContainer width='100%' height='100%'>
                           <BarChart
                             data={ohlcData.map((row) => ({
@@ -627,13 +628,13 @@ export default function StockDetailModal({
                               dataKey='date'
                               axisLine={false}
                               tickLine={false}
-                              tick={{ fill: 'var(--idx-text-muted)', fontSize: 10 }}
+                              tick={{ fill: '#94a3b8', fontSize: 10 }}
                             />
                             <YAxis
                               orientation='right'
                               axisLine={false}
                               tickLine={false}
-                              tick={{ fill: 'var(--idx-text-muted)', fontSize: 10 }}
+                              tick={{ fill: '#94a3b8', fontSize: 10 }}
                               tickFormatter={(v) => Utils.Format.formatNum(v, 0)}
                             />
                             <Tooltip
@@ -648,25 +649,25 @@ export default function StockDetailModal({
                                 const bid = row.bidVolume ?? 0
                                 const offer = row.offerVolume ?? 0
                                 return (
-                                  <div className='idx-foreign-tooltip'>
-                                    <div className='idx-foreign-tooltip-label'>
+                                  <div className='bg-surface-elevated border border-border rounded-lg p-3 shadow-lg text-sm'>
+                                    <div className='font-semibold text-text mb-2'>
                                       {Utils.Format.formatTitleCase(String(label))}
                                     </div>
-                                    <div className='idx-tooltip-row'>
-                                      <span className='idx-tooltip-swatch idx-tooltip-swatch-up' />
-                                      <span>
+                                    <div className='flex items-center gap-2'>
+                                      <span className='w-3 h-3 rounded-full inline-block bg-up' />
+                                      <span className='text-text text-sm'>
                                         {Utils.Format.formatTitleCase('Bid')}:{' '}
                                         {Utils.Format.formatNum(bid, 0)}
                                       </span>
                                     </div>
-                                    <div className='idx-tooltip-row'>
-                                      <span className='idx-tooltip-swatch idx-tooltip-swatch-down' />
-                                      <span>
+                                    <div className='flex items-center gap-2'>
+                                      <span className='w-3 h-3 rounded-full inline-block bg-down' />
+                                      <span className='text-text text-sm'>
                                         {Utils.Format.formatTitleCase('Offer')}:{' '}
                                         {Utils.Format.formatNum(offer, 0)}
                                       </span>
                                     </div>
-                                    <div>
+                                    <div className='text-text text-sm'>
                                       {Utils.Format.formatTitleCase('Total')}:{' '}
                                       {Utils.Format.formatNum(bid + offer, 0)}
                                     </div>
@@ -694,22 +695,22 @@ export default function StockDetailModal({
                       </div>
                     )}
                     {!ohlcLoading && !ohlcError && ohlcData && ohlcData.length === 0 && (
-                      <p className='idx-p-muted'>Tidak ada data volume untuk periode ini.</p>
+                      <p className='text-text-muted text-sm'>Tidak ada data volume untuk periode ini.</p>
                     )}
                   </div>
-                  <div className='idx-detail-block idx-mb-12'>
-                    <label className='idx-form-label'>Aliran Asing (Net)</label>
-                    {foreignLoading && <div className='idx-loading'>Memuat aliran asing...</div>}
-                    {foreignError && <div className='idx-error'>{foreignError}</div>}
+                  <div className='rounded-lg border border-border bg-surface-elevated p-4 mb-3'>
+                    <label className='text-xs font-medium text-text-muted'>Aliran Asing (Net)</label>
+                    {foreignLoading && <div className='flex items-center justify-center py-8 text-text-muted text-sm'>Memuat aliran asing...</div>}
+                    {foreignError && <div className='text-down text-sm p-4 rounded-lg border border-down/30 bg-down/10'>{foreignError}</div>}
                     {!foreignLoading && !foreignError && foreignData && (
                       <>
                         {foreignData.summary.dayCount > 0 && (
-                          <p className='idx-p-muted idx-mb-8'>
+                          <p className='text-text-muted text-sm mb-2'>
                             Total NET Flow Dalam {foreignData.summary.dayCount} Hari:{' '}
                             <span
                               className={foreignData.summary.totalNet >= 0
-                                ? 'idx-pct idx-pct-up'
-                                : 'idx-pct idx-pct-down'}
+                                ? 'text-up'
+                                : 'text-down'}
                             >
                               {Utils.Format.formatRp(foreignData.summary.totalNet)}
                             </span>
@@ -717,7 +718,7 @@ export default function StockDetailModal({
                         )}
                         {foreignData.data.length > 0
                           ? (
-                            <div className='idx-chart-container'>
+                            <div className='rounded-lg border border-border bg-surface-elevated p-4 h-64'>
                               <ResponsiveContainer width='100%' height='100%'>
                                 <BarChart
                                   data={foreignData.data.map((row) => ({
@@ -732,13 +733,13 @@ export default function StockDetailModal({
                                     dataKey='date'
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: 'var(--idx-text-muted)', fontSize: 10 }}
+                                    tick={{ fill: '#94a3b8', fontSize: 10 }}
                                   />
                                   <YAxis
                                     orientation='right'
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: 'var(--idx-text-muted)', fontSize: 10 }}
+                                    tick={{ fill: '#94a3b8', fontSize: 10 }}
                                     tickFormatter={(v) => Utils.Format.formatRp(v)}
                                   />
                                   <Tooltip
@@ -751,24 +752,24 @@ export default function StockDetailModal({
                                         return null
                                       }
                                       return (
-                                        <div className='idx-foreign-tooltip'>
-                                          <div className='idx-foreign-tooltip-label'>
+                                        <div className='bg-surface-elevated border border-border rounded-lg p-3 shadow-lg text-sm'>
+                                          <div className='font-semibold text-text mb-2'>
                                             {Utils.Format.formatTitleCase(String(label))}
                                           </div>
-                                          <div>
+                                          <div className='text-text text-sm'>
                                             {Utils.Format.formatTitleCase('Beli')}:{' '}
                                             {Utils.Format.formatRp(row.buy)}
                                           </div>
-                                          <div>
+                                          <div className='text-text text-sm'>
                                             {Utils.Format.formatTitleCase('Jual')}:{' '}
                                             {Utils.Format.formatRp(row.sell)}
                                           </div>
-                                          <div>
+                                          <div className='text-text text-sm'>
                                             {Utils.Format.formatTitleCase('Net')}:{' '}
                                             <span
-                                              style={{
-                                                color: (row.net ?? 0) >= 0 ? '#10b981' : '#ef4444'
-                                              }}
+                                              className={
+                                                (row.net ?? 0) >= 0 ? 'text-up' : 'text-down'
+                                              }
                                             >
                                               {Utils.Format.formatRp(row.net)}
                                             </span>
@@ -795,7 +796,7 @@ export default function StockDetailModal({
                               </ResponsiveContainer>
                             </div>
                           )
-                          : <p className='idx-p-muted'>Tidak ada data untuk periode ini.</p>}
+                          : <p className='text-text-muted text-sm'>Tidak ada data untuk periode ini.</p>}
                       </>
                     )}
                   </div>
