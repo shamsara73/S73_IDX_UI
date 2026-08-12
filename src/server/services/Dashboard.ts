@@ -5,6 +5,7 @@
 
 import { GlobalMarket } from '@app/server/services/GlobalMarket.ts'
 import { Client } from '@app/server/services/Client.ts'
+import { Cache } from '@app/server/services/Cache.ts'
 import Database from '@app/server/Database.ts'
 import * as Schemas from '@app/server/schemas/index.ts'
 import { asc, desc, eq, sql } from 'drizzle-orm'
@@ -43,12 +44,12 @@ export class Dashboard {
   static async fetchAll(): Promise<DashboardData> {
     const client = new Client()
     const [globalMarkets, idxHeadlines, idxSuspend, idxUma, idxRelisting, idxAnnouncement] = await Promise.allSettled([
-      GlobalMarket.fetchAll(),
-      safeJson(`${IDX}/NewsAnnouncement/GetNewsSearch?pageNumber=1&pageSize=4&isHeadline=1&locale=id-id`, client),
-      safeJson(`${IDX}/Home/GetSuspendData?resultCount=7`, client),
-      safeJson(`${IDX}/Home/GetUmaData?resultCount=7`, client),
-      safeJson(`${IDX}/Home/GetRelistingData?pageSize=7&indexFrom=0`, client),
-      safeJson(`${IDX}/ListedCompany/GetAnnouncement?pageSize=7&indexFrom=0&language=id-id`, client)
+      Cache.cached('global:markets', 5 * 60_000, () => GlobalMarket.fetchAll()),
+      Cache.cached('idx:headlines', 30 * 60_000, () => safeJson(`${IDX}/NewsAnnouncement/GetNewsSearch?pageNumber=1&pageSize=4&isHeadline=1&locale=id-id`, client)),
+      Cache.cached('idx:suspend', 15 * 60_000, () => safeJson(`${IDX}/Home/GetSuspendData?resultCount=7`, client)),
+      Cache.cached('idx:uma', 15 * 60_000, () => safeJson(`${IDX}/Home/GetUmaData?resultCount=7`, client)),
+      Cache.cached('idx:relisting', 60 * 60_000, () => safeJson(`${IDX}/Home/GetRelistingData?pageSize=7&indexFrom=0`, client)),
+      Cache.cached('idx:announcement', 60 * 60_000, () => safeJson(`${IDX}/ListedCompany/GetAnnouncement?pageSize=7&indexFrom=0&language=id-id`, client))
     ])
 
     // Parse headlines
@@ -133,14 +134,18 @@ export class Dashboard {
       }
     }
 
-    // Watchlist with current prices (from IDX realtime) — parallel
+    // Watchlist with current prices (from IDX realtime) — cached 3 min, parallel
     const wlRows = await Database.select().from(Schemas.watchlist).orderBy(asc(Schemas.watchlist.code))
     const watchlistResults = await Promise.allSettled(
       wlRows.slice(0, 8).map(async (wl) => {
+        const cached = await Cache.get<{ price: number | null; changePct: number | null }>(`wl:${wl.code}`)
+        if (cached != null) return { code: wl.code, ...cached }
         const res = await client.get(`${IDX}/home/GetStockInfo?code=${wl.code}`, { signal: AbortSignal.timeout(8000) })
         if (!res.ok) return { code: wl.code, price: null, changePct: null }
         const j = (await res.json()) as { Price?: number; Percent?: number }
-        return { code: wl.code, price: j.Price ?? null, changePct: j.Percent != null ? j.Percent / 100 : null }
+        const result = { price: j.Price ?? null, changePct: j.Percent != null ? j.Percent / 100 : null }
+        await Cache.set(`wl:${wl.code}`, result, 3 * 60_000)
+        return { code: wl.code, ...result }
       })
     )
     const watchlist: DashboardData['watchlist'] = watchlistResults.map((r) =>
