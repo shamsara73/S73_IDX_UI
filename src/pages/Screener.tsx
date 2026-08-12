@@ -321,52 +321,56 @@ export default function Screener() {
         ))}
       </div>
 
-      {/* Fundamental tab: Filter + Table + Sidebar */}
+      {/* Fundamental tab */}
       {mainTab === 'fundamental' && (
-        <div className='grid grid-cols-[260px_1fr_280px] gap-4'>
-          <div className='space-y-4'>
-            <ScreenerComps.FilterPanel
-              params={params}
-              sectors={sectors}
-              sectorFilter={sectorFilter}
-              onSectorFilterChange={handleSectorFilterChange}
-              onParamsChange={handleParamsChange}
-              onApply={handleApplyFilter}
-              onDefaultFilter={handleDefaultFilter}
-            />
-          </div>
-          <div>
-            <ScreenerComps.CandidatesTable
-              data={rawData}
-              limit={limit}
-              offset={offset}
-              totalCount={totalCount}
-              {...(totalCountLabel != null && { totalCountLabel })}
-              onPage={handlePageChange}
-              onRowClick={handleRowClick}
-              searchValue={searchQuery}
-              onSearchChange={handleSearchChange}
-              loading={candidatesLoading}
-              error={candidatesError}
-              emptyMessage={searchForRequest !== ''
-                ? 'Tidak ada hasil untuk pencarian ini.'
-                : 'Tidak ada kandidat yang memenuhi filter.'}
-              watchlistCodes={watchlistCodes}
-              onWatchlistToggle={toggleWatchlist}
-              sortBy={sortBy}
-              sortDir={sortDir}
-              onSortChange={handleSortChange}
-            />
-          </div>
-          <aside>
+        <>
+          {/* Sector strength — compact horizontal bar */}
+          <div className='mb-4'>
             <ScreenerComps.SectorStrength
               data={sectorData}
               loading={sectorLoading}
               week={sectorWeek}
               onWeekChange={setSectorWeek}
             />
-          </aside>
-        </div>
+          </div>
+          {/* Filter panel (sidebar) + Table */}
+          <div className='grid grid-cols-1 gap-4 lg:grid-cols-[220px_1fr]'>
+            <div className='space-y-4 lg:block'>
+              <ScreenerComps.FilterPanel
+                params={params}
+                sectors={sectors}
+                sectorFilter={sectorFilter}
+                onSectorFilterChange={handleSectorFilterChange}
+                onParamsChange={handleParamsChange}
+                onApply={handleApplyFilter}
+                onDefaultFilter={handleDefaultFilter}
+              />
+            </div>
+            <div>
+              <ScreenerComps.CandidatesTable
+                data={rawData}
+                limit={limit}
+                offset={offset}
+                totalCount={totalCount}
+                {...(totalCountLabel != null && { totalCountLabel })}
+                onPage={handlePageChange}
+                onRowClick={handleRowClick}
+                searchValue={searchQuery}
+                onSearchChange={handleSearchChange}
+                loading={candidatesLoading}
+                error={candidatesError}
+                emptyMessage={searchForRequest !== ''
+                  ? 'Tidak ada hasil untuk pencarian ini.'
+                  : 'Tidak ada kandidat yang memenuhi filter.'}
+                watchlistCodes={watchlistCodes}
+                onWatchlistToggle={toggleWatchlist}
+                sortBy={sortBy}
+                sortDir={sortDir}
+                onSortChange={handleSortChange}
+              />
+            </div>
+          </div>
+        </>
       )}
 
       {/* Technical tab */}
