@@ -1,9 +1,6 @@
 /**
  * Copyright (c) 2026 IDX Screener by @NeaByteLab (https://neabyte.com)
  * SPDX-License-Identifier: MIT
- *
- * Open to remote work & consulting.
- * Fullstack developer with a focus on security and experience in trading systems.
  */
 
 import React, { useCallback } from 'react'
@@ -17,73 +14,60 @@ import Backtest from '@app/pages/Backtest.tsx'
 import Portfolio from '@app/pages/Portfolio.tsx'
 import Journal from '@app/pages/Journal.tsx'
 
+const NAV = [
+  { path: '/', label: 'Beranda', icon: HomeIcon },
+  { path: '/screener', label: 'Screener', icon: BarChart3 },
+  { path: '/historical', label: 'Historical', icon: History },
+  { path: '/backtest', label: 'Backtest', icon: LineChart },
+  { path: '/portfolio', label: 'Portfolio', icon: PieChart },
+  { path: '/journal', label: 'Journal', icon: BookOpen },
+  { path: '/about', label: 'Tentang', icon: Info }
+]
+
 export default function App() {
   const location = useLocation()
   const isActive = useCallback((path: string) => location.pathname === path, [location.pathname])
 
   return (
-    <div className='idx-page'>
-      <header className='idx-header'>
-        <div className='idx-header-inner'>
-          <Link to='/' className='idx-logo' style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className='idx-logo-icon'>
-              <LineChart size={22} strokeWidth={2.2} />
+    <div className='min-h-screen bg-background text-text'>
+      {/* ── Navbar ── */}
+      <header className='sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md'>
+        <div className='mx-auto flex h-12 max-w-7xl items-center gap-6 px-4'>
+          {/* Logo */}
+          <Link to='/' className='flex items-center gap-2 no-underline'>
+            <div className='flex h-7 w-7 items-center justify-center rounded-md bg-accent/10'>
+              <LineChart size={16} className='text-accent' strokeWidth={2.5} />
             </div>
-            <span className='idx-logo-text'>
-              IDX <span>Screener</span>
+            <span className='text-sm font-bold tracking-tight'>
+              IDX <span className='text-accent'>Screener</span>
             </span>
           </Link>
-          <nav className='idx-nav'>
-            <Link to='/' className={`idx-nav-item ${isActive('/') ? 'idx-nav-item-active' : ''}`}>
-              <HomeIcon size={16} aria-hidden />
-              <span className='idx-nav-item-text'>Beranda</span>
-            </Link>
-            <Link
-              to='/screener'
-              className={`idx-nav-item ${isActive('/screener') ? 'idx-nav-item-active' : ''}`}
-            >
-              <BarChart3 size={16} aria-hidden />
-              <span className='idx-nav-item-text'>Screener</span>
-            </Link>
-            <Link
-              to='/historical'
-              className={`idx-nav-item ${isActive('/historical') ? 'idx-nav-item-active' : ''}`}
-            >
-              <History size={16} aria-hidden />
-              <span className='idx-nav-item-text'>Historical</span>
-            </Link>
-            <Link
-              to='/backtest'
-              className={`idx-nav-item ${isActive('/backtest') ? 'idx-nav-item-active' : ''}`}
-            >
-              <LineChart size={16} aria-hidden />
-              <span className='idx-nav-item-text'>Backtest</span>
-            </Link>
-            <Link
-              to='/portfolio'
-              className={`idx-nav-item ${isActive('/portfolio') ? 'idx-nav-item-active' : ''}`}
-            >
-              <PieChart size={16} aria-hidden />
-              <span className='idx-nav-item-text'>Portofolio</span>
-            </Link>
-            <Link
-              to='/journal'
-              className={`idx-nav-item ${isActive('/journal') ? 'idx-nav-item-active' : ''}`}
-            >
-              <BookOpen size={16} aria-hidden />
-              <span className='idx-nav-item-text'>Journal</span>
-            </Link>
-            <Link
-              to='/about'
-              className={`idx-nav-item ${isActive('/about') ? 'idx-nav-item-active' : ''}`}
-            >
-              <Info size={16} aria-hidden />
-              <span className='idx-nav-item-text'>Tentang</span>
-            </Link>
+
+          {/* Nav */}
+          <nav className='flex items-center gap-1'>
+            {NAV.map(({ path, label, icon: Icon }) => {
+              const active = isActive(path)
+              return (
+                <Link
+                  key={path}
+                  to={path}
+                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium no-underline transition-colors ${
+                    active
+                      ? 'bg-accent/10 text-accent'
+                      : 'text-text-muted hover:bg-surface-elevated hover:text-text'
+                  }`}
+                >
+                  <Icon size={14} strokeWidth={active ? 2.2 : 1.8} />
+                  <span className='hidden sm:inline'>{label}</span>
+                </Link>
+              )
+            })}
           </nav>
         </div>
       </header>
-      <main>
+
+      {/* ── Content ── */}
+      <main className='min-h-[calc(100vh-3rem)]'>
         <Routes>
           <Route path='/' element={<Home />} />
           <Route path='/about' element={<About />} />

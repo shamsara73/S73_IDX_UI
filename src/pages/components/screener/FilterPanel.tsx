@@ -2,25 +2,84 @@
  * Copyright (c) 2026 IDX Screener by @NeaByteLab (https://neabyte.com)
  * SPDX-License-Identifier: MIT
  *
- * Open to remote work & consulting.
- * Fullstack developer with a focus on security and experience in trading systems.
+ * Filter panel — Tailwind + electric green accents.
  */
 
 import React, { useState } from 'react'
-import {
-  Ban,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  DollarSign,
-  Droplets,
-  Layers,
-  PieChart,
-  RotateCcw,
-  SlidersHorizontal,
-  TrendingUp
-} from 'lucide-react'
+import { ChevronDown, ChevronRight, SlidersHorizontal, RotateCcw } from 'lucide-react'
 import type * as Types from '@app/pages/Types.ts'
+
+function FilterGroup({ title, icon, children, defaultOpen = false }: {
+  title: string
+  icon?: React.ReactNode
+  children: React.ReactNode
+  defaultOpen?: boolean
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className='border-b border-border-subtle py-2'>
+      <button
+        type='button'
+        onClick={() => setOpen(!open)}
+        className='flex w-full items-center justify-between text-xs font-semibold uppercase tracking-wider text-text-muted hover:text-text'
+      >
+        <span className='flex items-center gap-1.5'>
+          {icon}
+          {title}
+        </span>
+        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+      </button>
+      {open && <div className='mt-2 space-y-2'>{children}</div>}
+    </div>
+  )
+}
+
+function FilterInput({ label, value, onChange, placeholder, type = 'number', min, max, step }: {
+  label: string
+  value: string | number | undefined
+  onChange: (v: string) => void
+  placeholder?: string
+  type?: string
+  min?: number
+  max?: number
+  step?: number
+}) {
+  return (
+    <div className='flex flex-col gap-1'>
+      <label className='text-[11px] text-text-dim'>{label}</label>
+      <input
+        type={type}
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        min={min}
+        max={max}
+        step={step}
+        className='h-8 rounded-md border border-border bg-surface px-2 text-sm text-text placeholder:text-text-dim focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30'
+      />
+    </div>
+  )
+}
+
+function FilterSelect({ label, value, onChange, options }: {
+  label: string
+  value: string | number | undefined
+  onChange: (v: string) => void
+  options: { value: string; label: string }[]
+}) {
+  return (
+    <div className='flex flex-col gap-1'>
+      <label className='text-[11px] text-text-dim'>{label}</label>
+      <select
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+        className='h-8 rounded-md border border-border bg-surface px-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30'
+      >
+        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </div>
+  )
+}
 
 export default function FilterPanel({
   params,
@@ -31,342 +90,119 @@ export default function FilterPanel({
   onApply,
   onDefaultFilter
 }: Types.FilterPanelProps) {
-  const updateFilterParam = (key: keyof Types.CandidatesParams, paramValue: unknown) => {
-    onParamsChange({ [key]: paramValue })
-  }
-  const [isCollapsed, setCollapsed] = useState(true)
+  const update = (key: keyof Types.CandidatesParams, val: unknown) => onParamsChange({ [key]: val })
 
   return (
-    <div className='idx-card idx-filter-panel'>
-      <button
-        type='button'
-        className='idx-filter-panel-toggle'
-        onClick={() => setCollapsed((prevCollapsed) => !prevCollapsed)}
-        aria-expanded={!isCollapsed}
-      >
-        <span className='idx-filter-panel-title'>
-          <SlidersHorizontal size={20} aria-hidden />
-          <span>Filter Kandidat</span>
+    <div className='rounded-lg border border-border bg-surface p-3'>
+      {/* Header */}
+      <div className='flex items-center justify-between'>
+        <span className='flex items-center gap-1.5 text-sm font-semibold'>
+          <SlidersHorizontal size={14} className='text-accent' />
+          Filter
         </span>
-        <span className='idx-filter-panel-chevron' aria-hidden>
-          {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
-        </span>
-      </button>
-      {!isCollapsed && (
-        <>
-          <div className='idx-filter-grid'>
-            <div className='idx-filter-group'>
-              <p className='idx-filter-group-title'>
-                <Layers size={16} aria-hidden />
-                <span>Sektor</span>
-              </p>
-              <p className='idx-filter-group-desc'>
-                Tampilkan kandidat per sektor, pilih sektor untuk memfilter tabel di bawah.
-              </p>
-              <div className='idx-filter-group-fields'>
-                <div className='idx-form-group'>
-                  <label className='idx-form-label' htmlFor='idx-filter-sector'>
-                    Pilih Sektor
-                  </label>
-                  <select
-                    id='idx-filter-sector'
-                    className='idx-select'
-                    value={sectorFilter}
-                    onChange={(event) => onSectorFilterChange(event.target.value)}
-                  >
-                    <option value=''>Semua</option>
-                    {sectors.map((sectorName) => (
-                      <option key={sectorName} value={sectorName}>
-                        {sectorName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div className='idx-filter-group'>
-              <p className='idx-filter-group-title'>
-                <DollarSign size={16} aria-hidden />
-                <span>Valuasi</span>
-              </p>
-              <p className='idx-filter-group-desc'>
-                Batas rasio PER (harga/earning), fokus pada saham yang dinilai wajar atau murah.
-              </p>
-              <div className='idx-filter-group-fields'>
-                <div className='idx-form-group'>
-                  <label className='idx-form-label' htmlFor='idx-filter-perMin'>
-                    PER Min
-                  </label>
-                  <input
-                    id='idx-filter-perMin'
-                    type='number'
-                    className='idx-input'
-                    placeholder='0'
-                    min={0}
-                    step={1}
-                    value={params.perMin ?? ''}
-                    onChange={(event) =>
-                      updateFilterParam(
-                        'perMin',
-                        event.target.value === '' ? undefined : Number(event.target.value)
-                      )}
-                  />
-                </div>
-                <div className='idx-form-group'>
-                  <label className='idx-form-label' htmlFor='idx-filter-perMax'>
-                    PER Max
-                  </label>
-                  <input
-                    id='idx-filter-perMax'
-                    type='number'
-                    className='idx-input'
-                    placeholder='25'
-                    min={0}
-                    step={1}
-                    value={params.perMax ?? ''}
-                    onChange={(event) =>
-                      updateFilterParam(
-                        'perMax',
-                        event.target.value === '' ? undefined : Number(event.target.value)
-                      )}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className='idx-filter-group'>
-              <p className='idx-filter-group-title'>
-                <PieChart size={16} aria-hidden />
-                <span>Fundamental</span>
-              </p>
-              <p className='idx-filter-group-desc'>
-                ROE minimal (profitabilitas) dan DER maksimal (risiko utang).
-              </p>
-              <div className='idx-filter-group-fields'>
-                <div className='idx-form-group'>
-                  <label className='idx-form-label' htmlFor='idx-filter-roeMin'>
-                    ROE Min (%)
-                  </label>
-                  <input
-                    id='idx-filter-roeMin'
-                    type='number'
-                    className='idx-input'
-                    placeholder='0'
-                    step={0.1}
-                    value={params.roeMin ?? ''}
-                    onChange={(event) =>
-                      updateFilterParam(
-                        'roeMin',
-                        event.target.value === '' ? undefined : Number(event.target.value)
-                      )}
-                  />
-                </div>
-                <div className='idx-form-group'>
-                  <label className='idx-form-label' htmlFor='idx-filter-derMax'>
-                    DER Max
-                  </label>
-                  <input
-                    id='idx-filter-derMax'
-                    type='number'
-                    className='idx-input'
-                    placeholder='2'
-                    min={0}
-                    step={0.1}
-                    value={params.derMax ?? ''}
-                    onChange={(event) =>
-                      updateFilterParam(
-                        'derMax',
-                        event.target.value === '' ? undefined : Number(event.target.value)
-                      )}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className='idx-filter-group'>
-              <p className='idx-filter-group-title'>
-                <TrendingUp size={16} aria-hidden />
-                <span>Momentum</span>
-              </p>
-              <p className='idx-filter-group-desc'>
-                Periode return (26 atau 52 minggu) dan batas minimal momentum (%).
-              </p>
-              <div className='idx-filter-group-fields'>
-                <div className='idx-form-group'>
-                  <label className='idx-form-label' htmlFor='idx-filter-momentumWeek'>
-                    Periode
-                  </label>
-                  <select
-                    id='idx-filter-momentumWeek'
-                    className='idx-select'
-                    value={params.momentumWeek ?? 26}
-                    onChange={(event) =>
-                      updateFilterParam('momentumWeek', Number(event.target.value) as 26 | 52)}
-                  >
-                    <option value={26}>26 minggu</option>
-                    <option value={52}>52 minggu</option>
-                  </select>
-                </div>
-                <div className='idx-form-group'>
-                  <label className='idx-form-label' htmlFor='idx-filter-momentumMin'>
-                    Momentum Min (%)
-                  </label>
-                  <input
-                    id='idx-filter-momentumMin'
-                    type='number'
-                    className='idx-input'
-                    placeholder='0'
-                    step={0.1}
-                    value={params.momentumMin ?? ''}
-                    onChange={(event) =>
-                      updateFilterParam(
-                        'momentumMin',
-                        event.target.value === '' ? undefined : Number(event.target.value)
-                      )}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className='idx-filter-group'>
-              <p className='idx-filter-group-title'>
-                <span>Dividen</span>
-              </p>
-              <p className='idx-filter-group-desc'>
-                Minimal dividend yield (%) 12 bulan terakhir dan jumlah tahun membagikan dividen (4 tahun terakhir).
-              </p>
-              <div className='idx-filter-group-fields'>
-                <div className='idx-form-group'>
-                  <label className='idx-form-label' htmlFor='idx-filter-divYieldMin'>
-                    Div Yield Min (%)
-                  </label>
-                  <input
-                    id='idx-filter-divYieldMin'
-                    type='number'
-                    className='idx-input'
-                    placeholder='0'
-                    step={0.1}
-                    value={params.divYieldMin ?? ''}
-                    onChange={(event) =>
-                      updateFilterParam(
-                        'divYieldMin',
-                        event.target.value === '' ? undefined : Number(event.target.value)
-                      )}
-                  />
-                </div>
-                <div className='idx-form-group'>
-                  <label className='idx-form-label' htmlFor='idx-filter-divYearsMin'>
-                    Div Years Min
-                  </label>
-                  <input
-                    id='idx-filter-divYearsMin'
-                    type='number'
-                    className='idx-input'
-                    placeholder='0'
-                    step={1}
-                    value={params.divYearsMin ?? ''}
-                    onChange={(event) =>
-                      updateFilterParam(
-                        'divYearsMin',
-                        event.target.value === '' ? undefined : Number(event.target.value)
-                      )}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className='idx-filter-group'>
-              <p className='idx-filter-group-title'>
-                <Droplets size={16} aria-hidden />
-                <span>Likuiditas</span>
-              </p>
-              <p className='idx-filter-group-desc'>
-                Batas minimal nilai transaksi (Rp) dan volume agar saham cukup likuid.
-              </p>
-              <div className='idx-filter-group-fields'>
-                <div className='idx-form-group'>
-                  <label className='idx-form-label' htmlFor='idx-filter-minValue'>
-                    Min Value (Rp)
-                  </label>
-                  <input
-                    id='idx-filter-minValue'
-                    type='number'
-                    className='idx-input'
-                    placeholder='0'
-                    min={0}
-                    value={params.minValue ?? ''}
-                    onChange={(event) =>
-                      updateFilterParam(
-                        'minValue',
-                        event.target.value === '' ? undefined : Number(event.target.value)
-                      )}
-                  />
-                </div>
-                <div className='idx-form-group'>
-                  <label className='idx-form-label' htmlFor='idx-filter-minVolume'>
-                    Min Volume
-                  </label>
-                  <input
-                    id='idx-filter-minVolume'
-                    type='number'
-                    className='idx-input'
-                    placeholder='0'
-                    min={0}
-                    value={params.minVolume ?? ''}
-                    onChange={(event) =>
-                      updateFilterParam(
-                        'minVolume',
-                        event.target.value === '' ? undefined : Number(event.target.value)
-                      )}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className='idx-filter-group'>
-              <p className='idx-filter-group-title'>
-                <Ban size={16} aria-hidden />
-                <span>Eksklusi</span>
-              </p>
-              <p className='idx-filter-group-desc'>
-                Sembunyikan saham dengan catatan khusus, corporate action, atau pengumuman UMA.
-              </p>
-              <div className='idx-checkbox-group'>
-                <label className='idx-checkbox-label'>
-                  <input
-                    type='checkbox'
-                    checked={params.excludeNotation === true}
-                    onChange={(event) => updateFilterParam('excludeNotation', event.target.checked)}
-                  />
-                  Kecualikan Saham dengan Notation
-                </label>
-                <label className='idx-checkbox-label'>
-                  <input
-                    type='checkbox'
-                    checked={params.excludeCorpAction === true}
-                    onChange={(event) =>
-                      updateFilterParam('excludeCorpAction', event.target.checked)}
-                  />
-                  Kecualikan Saham Corporate Action
-                </label>
-                <label className='idx-checkbox-label'>
-                  <input
-                    type='checkbox'
-                    checked={params.excludeUma === true}
-                    onChange={(event) => updateFilterParam('excludeUma', event.target.checked)}
-                  />
-                  Kecualikan Saham UMA
-                </label>
-              </div>
-            </div>
+      </div>
+
+      {/* Filter Groups */}
+      <div className='mt-3'>
+        <FilterGroup title='Valuasi' icon={<span className='text-accent text-xs'>$</span>} defaultOpen>
+          <div className='grid grid-cols-2 gap-2'>
+            <FilterInput label='PER Min' value={params.perMin} onChange={(v) => update('perMin', v ? Number(v) : undefined)} placeholder='0' />
+            <FilterInput label='PER Max' value={params.perMax} onChange={(v) => update('perMax', v ? Number(v) : undefined)} placeholder='25' />
+            <FilterInput label='PBV Min' value={params.pbvMin} onChange={(v) => update('pbvMin', v ? Number(v) : undefined)} />
+            <FilterInput label='PBV Max' value={params.pbvMax} onChange={(v) => update('pbvMax', v ? Number(v) : undefined)} />
           </div>
-          <div className='idx-filter-actions'>
-            <button type='button' className='idx-btn' onClick={onDefaultFilter}>
-              <RotateCcw size={16} aria-hidden />
-              <span>Reset Ke Default</span>
-            </button>
-            <button type='button' className='idx-btn-primary' onClick={onApply}>
-              <Check size={16} aria-hidden />
-              <span>Terapkan Filter</span>
-            </button>
+        </FilterGroup>
+
+        <FilterGroup title='Kualitas' icon={<span className='text-accent text-xs'>Q</span>}>
+          <div className='grid grid-cols-2 gap-2'>
+            <FilterInput label='ROE Min (%)' value={params.roeMin} onChange={(v) => update('roeMin', v ? Number(v) : undefined)} placeholder='15' />
+            <FilterInput label='DER Max' value={params.derMax} onChange={(v) => update('derMax', v ? Number(v) : undefined)} placeholder='1' />
+            <FilterInput label='ROA Min (%)' value={params.roaMin} onChange={(v) => update('roaMin', v ? Number(v) : undefined)} />
+            <FilterInput label='NPM Min (%)' value={params.npmMin} onChange={(v) => update('npmMin', v ? Number(v) : undefined)} />
           </div>
-        </>
-      )}
+        </FilterGroup>
+
+        <FilterGroup title='Momentum' icon={<span className='text-accent text-xs'>M</span>}>
+          <div className='grid grid-cols-2 gap-2'>
+            <FilterSelect
+              label='Periode'
+              value={params.momentumWeek}
+              onChange={(v) => update('momentumWeek', v ? Number(v) : undefined)}
+              options={[
+                { value: '', label: 'Default (26w)' },
+                { value: '4', label: '4 minggu' },
+                { value: '12', label: '12 minggu' },
+                { value: '26', label: '26 minggu' },
+                { value: '52', label: '52 minggu' }
+              ]}
+            />
+            <FilterInput label='Min Return (%)' value={params.momentumMin} onChange={(v) => update('momentumMin', v ? Number(v) : undefined)} />
+          </div>
+        </FilterGroup>
+
+        <FilterGroup title='Dividen'>
+          <div className='grid grid-cols-2 gap-2'>
+            <FilterInput label='Yield Min (%)' value={params.divYieldMin} onChange={(v) => update('divYieldMin', v ? Number(v) : undefined)} placeholder='3' />
+            <FilterInput label='Tahun Min' value={params.divYearsMin} onChange={(v) => update('divYearsMin', v ? Number(v) : undefined)} placeholder='2' />
+          </div>
+        </FilterGroup>
+
+        <FilterGroup title='Likuiditas' icon={<span className='text-accent text-xs'>L</span>}>
+          <div className='grid grid-cols-2 gap-2'>
+            <FilterInput label='Min Volume' value={params.minVolume} onChange={(v) => update('minVolume', v ? Number(v) : undefined)} placeholder='100000' />
+            <FilterInput label='Min Value (Rp)' value={params.minValue} onChange={(v) => update('minValue', v ? Number(v) : undefined)} placeholder='500000000' />
+          </div>
+        </FilterGroup>
+
+        <FilterGroup title='Sektor'>
+          <select
+            value={sectorFilter}
+            onChange={(e) => onSectorFilterChange(e.target.value)}
+            className='h-8 w-full rounded-md border border-border bg-surface px-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30'
+          >
+            <option value=''>Semua Sektor</option>
+            {sectors.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </FilterGroup>
+
+        <FilterGroup title='Pengecualian'>
+          <div className='space-y-1.5'>
+            {[
+              { key: 'excludeNotation', label: 'Tanpa Notasi' },
+              { key: 'excludeCorpAction', label: 'Tanpa Corp Action' },
+              { key: 'excludeUma', label: 'Tanpa UMA' }
+            ].map(({ key, label }) => (
+              <label key={key} className='flex items-center gap-2 text-sm text-text-muted'>
+                <input
+                  type='checkbox'
+                  checked={Boolean(params[key as keyof Types.CandidatesParams])}
+                  onChange={(e) => update(key as keyof Types.CandidatesParams, e.target.checked || undefined)}
+                  className='h-3.5 w-3.5 rounded border-border accent-accent'
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </FilterGroup>
+      </div>
+
+      {/* Actions */}
+      <div className='mt-3 flex gap-2'>
+        <button
+          type='button'
+          onClick={onApply}
+          className='flex-1 rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-background transition hover:bg-accent-light'
+        >
+          Terapkan
+        </button>
+        <button
+          type='button'
+          onClick={onDefaultFilter}
+          className='rounded-md border border-border px-3 py-1.5 text-sm text-text-muted transition hover:bg-surface-elevated hover:text-text'
+        >
+          <RotateCcw size={14} />
+        </button>
+      </div>
     </div>
   )
 }

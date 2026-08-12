@@ -248,160 +248,164 @@ export default function Screener() {
     : undefined
 
   return (
-    <div className='idx-page'>
-      <div className='idx-main'>
-        <ScreenerComps.DashboardHeader
-          totalCount={mainTab === 'watchlist' ? watchlistRows.length : totalCount}
-          date={dataDate}
-          onRefresh={refetchCandidates}
-          loading={mainTab === 'watchlist' ? false : candidatesLoading}
+    <div className='mx-auto max-w-[1600px] px-4 py-4'>
+      <ScreenerComps.DashboardHeader
+        totalCount={mainTab === 'watchlist' ? watchlistRows.length : totalCount}
+        date={dataDate}
+        onRefresh={refetchCandidates}
+        loading={mainTab === 'watchlist' ? false : candidatesLoading}
+      />
+
+      {/* NL Search + Saved Screens bar */}
+      <div className='mb-4 flex flex-wrap items-center gap-2'>
+        <input
+          type='text'
+          className='h-9 flex-1 min-w-[200px] rounded-md border border-border bg-surface px-3 text-sm text-text placeholder:text-text-dim focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30'
+          placeholder='Cari dengan AI (mis. ROE di atas 15, DER di bawah 1)'
+          value={nlQuery}
+          onChange={(e) => setNlQuery(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleNlSearch() }}
+          disabled={nlLoading}
         />
-        <div className='idx-screens-bar'>
-          <input
-            type='text'
-            className='idx-input'
-            placeholder='Cari dengan AI (mis. ROE di atas 15, DER di bawah 1)'
-            value={nlQuery}
-            onChange={(e) => setNlQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleNlSearch() }}
-            disabled={nlLoading}
-          />
-          <button type='button' onClick={handleNlSearch} disabled={nlLoading}>
-            {nlLoading ? '...' : 'Cari'}
-          </button>
-          <input
-            type='text'
-            className='idx-input'
-            placeholder='Nama screen (mis. Value + Dividen)'
-            value={screenName}
-            onChange={(e) => setScreenName(e.target.value)}
-          />
-          <button type='button' onClick={handleSaveScreen}>
-            Simpan Screen
-          </button>
-          {savedScreens.map((screen) => (
-            <span key={screen.id} className='idx-screen-chip'>
-              <button type='button' onClick={() => handleLoadScreen(screen)}>
-                {screen.name}
-              </button>
-              <button
-                type='button'
-                aria-label={`Hapus ${screen.name}`}
-                onClick={() => handleDeleteScreen(screen.id)}
-              >
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
-        <div className='idx-tabs idx-mb-24'>
+        <button
+          type='button'
+          onClick={handleNlSearch}
+          disabled={nlLoading}
+          className='h-9 rounded-md bg-accent px-4 text-sm font-semibold text-background transition hover:bg-accent-light disabled:opacity-50'
+        >
+          {nlLoading ? '...' : 'Cari'}
+        </button>
+        <div className='h-6 w-px bg-border' />
+        <input
+          type='text'
+          className='h-9 min-w-[180px] rounded-md border border-border bg-surface px-3 text-sm text-text placeholder:text-text-dim focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30'
+          placeholder='Nama screen'
+          value={screenName}
+          onChange={(e) => setScreenName(e.target.value)}
+        />
+        <button
+          type='button'
+          onClick={handleSaveScreen}
+          className='h-9 rounded-md border border-border px-3 text-sm text-text-muted transition hover:bg-surface-elevated hover:text-text'
+        >
+          Simpan
+        </button>
+        {savedScreens.map((screen) => (
+          <span key={screen.id} className='inline-flex items-center gap-1 rounded-full border border-border bg-surface-elevated px-2.5 py-1 text-xs'>
+            <button type='button' onClick={() => handleLoadScreen(screen)} className='text-text-muted hover:text-accent'>{screen.name}</button>
+            <button type='button' onClick={() => handleDeleteScreen(screen.id)} className='text-text-dim hover:text-down' aria-label={`Hapus ${screen.name}`}>×</button>
+          </span>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div className='mb-4 flex gap-1 border-b border-border pb-px'>
+        {[
+          { id: 'watchlist' as const, label: 'Watchlist', icon: Star },
+          { id: 'fundamental' as const, label: 'Analisa Fundamental', icon: BarChart2 },
+          { id: 'technical' as const, label: 'Analisa Teknikal', icon: TrendingUp }
+        ].map(({ id, label, icon: Icon }) => (
           <button
+            key={id}
             type='button'
-            className={`idx-tab idx-tab-inline ${mainTab === 'watchlist' ? 'idx-tab-active' : ''}`}
-            onClick={() => setMainTab('watchlist')}
-          >
-            <Star size={16} aria-hidden />
-            <span>Watchlist</span>
-          </button>
-          <button
-            type='button'
-            className={`idx-tab idx-tab-inline ${
-              mainTab === 'fundamental' ? 'idx-tab-active' : ''
+            onClick={() => setMainTab(id)}
+            className={`flex items-center gap-1.5 rounded-t-md px-3 py-2 text-sm font-medium transition ${
+              mainTab === id
+                ? 'border-b-2 border-accent bg-accent/5 text-accent'
+                : 'text-text-muted hover:text-text'
             }`}
-            onClick={() => setMainTab('fundamental')}
           >
-            <BarChart2 size={16} aria-hidden />
-            <span>Analisa Fundamental</span>
+            <Icon size={14} />
+            {label}
           </button>
-          <button
-            type='button'
-            className={`idx-tab idx-tab-inline ${mainTab === 'technical' ? 'idx-tab-active' : ''}`}
-            onClick={() => setMainTab('technical')}
-          >
-            <TrendingUp size={16} aria-hidden />
-            <span>Analisa Teknikal</span>
-          </button>
-        </div>
-        {mainTab === 'fundamental' && (
-          <div className='idx-grid-main'>
-            <div>
-              <ScreenerComps.FilterPanel
-                params={params}
-                sectors={sectors}
-                sectorFilter={sectorFilter}
-                onSectorFilterChange={handleSectorFilterChange}
-                onParamsChange={handleParamsChange}
-                onApply={handleApplyFilter}
-                onDefaultFilter={handleDefaultFilter}
-              />
-              <div className='idx-mt-24'>
-                <ScreenerComps.CandidatesTable
-                  data={rawData}
-                  limit={limit}
-                  offset={offset}
-                  totalCount={totalCount}
-                  {...(totalCountLabel != null && { totalCountLabel })}
-                  onPage={handlePageChange}
-                  onRowClick={handleRowClick}
-                  searchValue={searchQuery}
-                  onSearchChange={handleSearchChange}
-                  loading={candidatesLoading}
-                  error={candidatesError}
-                  emptyMessage={searchForRequest !== ''
-                    ? 'Tidak ada hasil untuk pencarian ini.'
-                    : 'Tidak ada kandidat yang memenuhi filter. Coba longgarkan filter atau klik "Reset Ke Default".'}
-                  watchlistCodes={watchlistCodes}
-                  onWatchlistToggle={toggleWatchlist}
-                  sortBy={sortBy}
-                  sortDir={sortDir}
-                  onSortChange={handleSortChange}
-                />
-              </div>
-            </div>
-            <aside>
-              <ScreenerComps.SectorStrength
-                data={sectorData}
-                loading={sectorLoading}
-                week={sectorWeek}
-                onWeekChange={setSectorWeek}
-              />
-            </aside>
-          </div>
-        )}
-        {mainTab === 'technical' && (
-          <div className='idx-technical-row'>
-            <ScreenerComps.RsiMarketView
-              data={screenerRsiData}
-              loading={screenerRsiLoading}
-              error={screenerRsiError}
-              onRefetch={refetchScreenerRsi}
-            />
-            <ScreenerComps.BidOfferMarketView
-              data={screenerBidOfferData}
-              loading={screenerBidOfferLoading}
-              error={screenerBidOfferError}
-              onRefetch={refetchScreenerBidOffer}
+        ))}
+      </div>
+
+      {/* Fundamental tab: Filter + Table + Sidebar */}
+      {mainTab === 'fundamental' && (
+        <div className='grid grid-cols-[260px_1fr_280px] gap-4'>
+          <div className='space-y-4'>
+            <ScreenerComps.FilterPanel
+              params={params}
+              sectors={sectors}
+              sectorFilter={sectorFilter}
+              onSectorFilterChange={handleSectorFilterChange}
+              onParamsChange={handleParamsChange}
+              onApply={handleApplyFilter}
+              onDefaultFilter={handleDefaultFilter}
             />
           </div>
-        )}
-        {mainTab === 'watchlist' && (
-          <div className='idx-mt-24'>
+          <div>
             <ScreenerComps.CandidatesTable
-              data={watchlistRows}
-              limit={watchlistRows.length || 10}
-              offset={0}
-              totalCount={watchlistRows.length}
+              data={rawData}
+              limit={limit}
+              offset={offset}
+              totalCount={totalCount}
+              {...(totalCountLabel != null && { totalCountLabel })}
               onPage={handlePageChange}
               onRowClick={handleRowClick}
-              loading={false}
-              error={null}
-              emptyMessage='Belum ada emiten di watchlist. Dari tab Analisa Fundamental, klik bintang di baris kandidat untuk menambah.'
+              searchValue={searchQuery}
+              onSearchChange={handleSearchChange}
+              loading={candidatesLoading}
+              error={candidatesError}
+              emptyMessage={searchForRequest !== ''
+                ? 'Tidak ada hasil untuk pencarian ini.'
+                : 'Tidak ada kandidat yang memenuhi filter.'}
               watchlistCodes={watchlistCodes}
               onWatchlistToggle={toggleWatchlist}
+              sortBy={sortBy}
+              sortDir={sortDir}
+              onSortChange={handleSortChange}
             />
           </div>
-        )}
-      </div>
+          <aside>
+            <ScreenerComps.SectorStrength
+              data={sectorData}
+              loading={sectorLoading}
+              week={sectorWeek}
+              onWeekChange={setSectorWeek}
+            />
+          </aside>
+        </div>
+      )}
+
+      {/* Technical tab */}
+      {mainTab === 'technical' && (
+        <div className='grid grid-cols-2 gap-4'>
+          <ScreenerComps.RsiMarketView
+            data={screenerRsiData}
+            loading={screenerRsiLoading}
+            error={screenerRsiError}
+            onRefetch={refetchScreenerRsi}
+          />
+          <ScreenerComps.BidOfferMarketView
+            data={screenerBidOfferData}
+            loading={screenerBidOfferLoading}
+            error={screenerBidOfferError}
+            onRefetch={refetchScreenerBidOffer}
+          />
+        </div>
+      )}
+
+      {/* Watchlist tab */}
+      {mainTab === 'watchlist' && (
+        <div className='mt-4'>
+          <ScreenerComps.CandidatesTable
+            data={watchlistRows}
+            limit={watchlistRows.length || 10}
+            offset={0}
+            totalCount={watchlistRows.length}
+            onPage={handlePageChange}
+            onRowClick={handleRowClick}
+            loading={false}
+            error={null}
+            emptyMessage='Belum ada emiten di watchlist. Klik bintang di tab Fundamental untuk menambah.'
+            watchlistCodes={watchlistCodes}
+            onWatchlistToggle={toggleWatchlist}
+          />
+        </div>
+      )}
+
       {detailCode && (
         <ScreenerComps.StockDetailModal
           detail={detailData}
