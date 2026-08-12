@@ -75,12 +75,13 @@ export class Realtime {
       let dayHigh: number | null = null
       let dayLow: number | null = null
       for (const b of bars) {
+        if (b.close <= 0) continue
         if (dayHigh == null || b.close > dayHigh) dayHigh = b.close
         if (dayLow == null || b.close < dayLow) dayLow = b.close
       }
-      // Opening range: first ~30 min of bars (≈ first 600 bars at tick level)
+      // Opening range: first ~30 min of bars with valid prices
       let openingRange: { high: number; low: number } | null = null
-      const openingBars = bars.slice(0, Math.min(600, bars.length))
+      const openingBars = bars.filter((b) => b.close > 0).slice(0, 600)
       if (openingBars.length > 0) {
         let orHigh = openingBars[0]!.close
         let orLow = openingBars[0]!.close
