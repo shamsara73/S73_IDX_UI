@@ -183,23 +183,28 @@ export class Dashboard {
 
     if (todayDateInt > 0) {
       const todaySummary = await Database.select({
-        code: Schemas.summary.stockCode, name: Schemas.summary.stockName, sector: Schemas.summary.sector,
-        priceClose: Schemas.summary.priceClose, priceChange: Schemas.summary.priceChange,
+        code: Schemas.summary.stockCode, name: Schemas.summary.stockName,
+        priceClose: Schemas.summary.priceClose, change: Schemas.summary.change,
         value: Schemas.summary.value, foreignBuy: Schemas.summary.foreignBuy, foreignSell: Schemas.summary.foreignSell
       }).from(Schemas.summary).where(eq(Schemas.summary.date, todayDateInt))
+
+      // Get sector from screener for foreign flow
+      const sectorMap = new Map<string, string>()
+      const screenerAll = await Database.select({ code: Schemas.screener.code, sector: Schemas.screener.sector }).from(Schemas.screener)
+      for (const s of screenerAll) { if (s.sector) sectorMap.set(s.code, s.sector) }
 
       // Top movers (biggest gainers + losers)
       const withPct = todaySummary.map((r) => ({
         code: r.code, name: r.name, price: r.priceClose ?? 0,
-        changePct: r.priceClose != null && r.priceChange != null && r.priceClose > 0 ? r.priceChange / (r.priceClose - r.priceChange) : 0
+        changePct: r.priceClose != null && r.change != null && r.priceClose > 0 ? r.change / (r.priceClose - r.change) : 0
       })).filter((r) => r.price > 0 && Number.isFinite(r.changePct))
       const sorted = [...withPct].sort((a, b) => b.changePct - a.changePct)
       topMovers = [...sorted.slice(0, 5), ...sorted.slice(-5).reverse()]
 
-      // Foreign flow by sector
+      // Foreign flow by sector (using screener sector)
       const sectorForeign = new Map<string, number>()
       for (const r of todaySummary) {
-        const sector = r.sector ?? 'Lainnya'
+        const sector = sectorMap.get(r.code) ?? 'Lainnya'
         const net = (r.foreignBuy ?? 0) - (r.foreignSell ?? 0)
         sectorForeign.set(sector, (sectorForeign.get(sector) ?? 0) + net)
       }
@@ -221,7 +226,7 @@ export class Dashboard {
         .filter((r) => (r.value ?? 0) > 0)
         .map((r) => ({
           code: r.code, name: r.name, value: r.value ?? 0, price: r.priceClose ?? 0,
-          changePct: r.priceClose != null && r.priceChange != null && r.priceClose > 0 ? r.priceChange / (r.priceClose - r.priceChange) : 0
+          changePct: r.priceClose != null && r.change != null && r.priceClose > 0 ? r.change / (r.priceClose - r.change) : 0
         }))
         .sort((a, b) => b.value - a.value)
         .slice(0, 5)
