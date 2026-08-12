@@ -16,6 +16,7 @@ import {
   Cell,
   Line,
   LineChart,
+  ReferenceArea,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -65,6 +66,67 @@ function buildRsiChartData(rsiData: Types.RsiResponse | null): {
   const chartData = Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date, 'en'))
   const hasSector = chartData.some((d) => d.sectorRsi != null)
   return { chartData, hasSector }
+}
+
+function IntradayChart({ code }: { code: string }) {
+  const [bars, setBars] = useState<{ time: string; close: number }[]>([])
+  const [vwap, setVwap] = useState<number | null>(null)
+  const [openingRange, setOpeningRange] = useState<{ high: number; low: number } | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (code === '') { setLoading(false); return }
+    let cancelled = false
+    Promise.all([
+      fetch(`/api/${encodeURIComponent(code)}/intraday`).then((r) => r.json()),
+      fetch(`/api/${encodeURIComponent(code)}/realtime`).then((r) => r.json())
+    ]).then(([intraday, realtime]) => {
+      if (cancelled) return
+      const raw = intraday.bars ?? []
+      // Downsample to ~1-min for rendering (take every Nth bar)
+      const step = Math.max(1, Math.floor(raw.length / 400))
+      const sampled = raw.filter((_: unknown, i: number) => i % step === 0).map((b: { label: string; close: number }) => ({ time: b.label, close: b.close }))
+      setBars(sampled)
+      setVwap(realtime.vwap ?? null)
+      setOpeningRange(intraday.openingRange ?? null)
+    }).catch(() => {}).finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [code])
+
+  if (loading) return <p className='idx-p-muted'>Memuat chart intraday...</p>
+  if (bars.length === 0) return <p className='idx-p-muted'>Data intraday tidak tersedia.</p>
+
+  const orHigh = openingRange?.high ?? null
+  const orLow = openingRange?.low ?? null
+
+  return (
+    <div className='idx-detail-block idx-mb-16'>
+      <label className='idx-form-label'>Chart Intraday Hari Ini ({bars.length} titik)</label>
+      <ResponsiveContainer width='100%' height={200}>
+        <AreaChart data={bars} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+          <CartesianGrid strokeDasharray='3 3' stroke='var(--idx-border, #e2e8f0)' />
+          <XAxis dataKey='time' tick={{ fontSize: 10 }} interval={Math.floor(bars.length / 6)} />
+          <YAxis domain={['auto', 'auto']} tick={{ fontSize: 10 }} width={55} />
+          <Tooltip
+            contentStyle={{ fontSize: 12, background: 'var(--idx-surface, #fff)', border: '1px solid var(--idx-border, #e2e8f0)' }}
+            formatter={(value: number) => [`${value.toLocaleString('id-ID')}`, 'Harga']}
+          />
+          {orHigh != null && orLow != null && (
+            <ReferenceArea y1={orLow} y2={orHigh} fill='rgba(34,197,94,0.08)' stroke='none' />
+          )}
+          {vwap != null && (
+            <ReferenceLine y={vwap} stroke='#8b5cf6' strokeDasharray='4 4' strokeWidth={1.5} label={{ value: `VWAP ${vwap.toLocaleString('id-ID')}`, position: 'right', fontSize: 10, fill: '#8b5cf6' }} />
+          )}
+          <Area type='monotone' dataKey='close' stroke='var(--idx-accent, #2563eb)' fill='var(--idx-accent-light, rgba(37,99,235,0.08))' strokeWidth={1.5} dot={false} isAnimationActive={false} />
+        </AreaChart>
+      </ResponsiveContainer>
+      {orHigh != null && orLow != null && (
+        <p className='idx-p-muted' style={{ fontSize: 12, marginTop: 4 }}>
+          Opening Range (30 menit pertama): {orLow.toLocaleString('id-ID')} – {orHigh.toLocaleString('id-ID')}
+        </p>
+      )}
+    </div>
+  )
 }
 
 function AiExplainView({ code }: { code: string }) {
@@ -426,6 +488,7 @@ export default function StockDetailModal({
               )}
               {activeTab === 'technical' && (
                 <>
+                  <IntradayChart code={detail?.code ?? ''} />
                   <div className='idx-foreign-header idx-mb-16'>
                     <label className='idx-form-label'>Periode</label>
                     <div className='idx-tabs'>
