@@ -29,16 +29,16 @@ function AllocationBars({ rows }: { rows: Types.PortfolioRow[] }) {
   }
   const entries = [...bySector.entries()].sort((a, b) => b[1] - a[1])
   return (
-    <div className='idx-alloc'>
+    <div className='space-y-2'>
       {entries.map(([sector, value]) => {
         const pct = (value / total) * 100
         return (
-          <div key={sector} className='idx-alloc-row'>
-            <span className='idx-alloc-label'>{sector}</span>
-            <div className='idx-alloc-bar'>
-              <div className='idx-alloc-fill' style={{ width: `${pct}%` }} />
+          <div key={sector} className='flex items-center gap-3'>
+            <span className='text-sm text-text-muted w-24 shrink-0'>{sector}</span>
+            <div className='flex-1 h-2 bg-surface-elevated rounded-full overflow-hidden'>
+              <div className='h-full bg-accent rounded-full' style={{ width: `${pct}%` }} />
             </div>
-            <span className='idx-alloc-pct'>{pct.toFixed(1)}%</span>
+            <span className='text-sm text-text w-12 text-right'>{pct.toFixed(1)}%</span>
           </div>
         )
       })}
@@ -120,25 +120,25 @@ export default function Portfolio() {
     if (value == null) {
       return ''
     }
-    return value >= 0 ? 'idx-pnl-positive' : 'idx-pnl-negative'
+    return value >= 0 ? 'text-up' : 'text-down'
   }
 
   return (
-    <div className='idx-page'>
-      <div className='idx-main'>
-        <h1 className='idx-h1'>Portofolio</h1>
-        <p className='idx-muted'>
-          Lacak posisi, biaya perolehan, P&L real-time (harga penutupan terakhir), alokasi sektor,
+    <div className='p-6 bg-background min-h-screen'>
+      <div className='max-w-7xl mx-auto'>
+        <h1 className='text-2xl font-bold text-text'>Portofolio</h1>
+        <p className='text-text-muted mt-1 mb-6'>
+          Lacak posisi, biaya perolehan, P&amp;L real-time (harga penutupan terakhir), alokasi sektor,
           dan akumulasi dividen 12 bulan terakhir.
         </p>
 
-        {error && <p className='idx-error'>{error}</p>}
+        {error && <p className='text-down text-sm mb-4'>{error}</p>}
 
-        <div className='idx-card idx-mb-24'>
-          <div className='idx-portfolio-form'>
+        <div className='rounded-lg border border-border bg-surface p-4 mb-6'>
+          <div className='flex flex-wrap items-center gap-2'>
             <input
               type='text'
-              className='idx-input'
+              className='h-9 rounded-md border border-border bg-surface px-3 text-sm text-text placeholder:text-text-muted'
               placeholder='Kode (mis. BBRI)'
               value={form.code}
               maxLength={5}
@@ -146,7 +146,7 @@ export default function Portfolio() {
             />
             <input
               type='number'
-              className='idx-input'
+              className='h-9 rounded-md border border-border bg-surface px-3 text-sm text-text placeholder:text-text-muted'
               placeholder='Lembar saham'
               value={form.shares}
               min={1}
@@ -154,7 +154,7 @@ export default function Portfolio() {
             />
             <input
               type='number'
-              className='idx-input'
+              className='h-9 rounded-md border border-border bg-surface px-3 text-sm text-text placeholder:text-text-muted'
               placeholder='Harga beli (Rp)'
               value={form.avgCost}
               min={1}
@@ -162,103 +162,108 @@ export default function Portfolio() {
             />
             <input
               type='text'
-              className='idx-input'
+              className='h-9 rounded-md border border-border bg-surface px-3 text-sm text-text placeholder:text-text-muted'
               placeholder='Catatan (opsional)'
               value={form.note}
               onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
             />
-            <button type='button' className='idx-btn idx-btn-primary' onClick={handleSubmit} disabled={busy}>
+            <button
+              type='button'
+              className='inline-flex items-center px-4 py-1.5 rounded-md text-sm font-medium bg-accent text-background disabled:opacity-50'
+              onClick={handleSubmit}
+              disabled={busy}
+            >
               {busy ? 'Menyimpan...' : 'Simpan Posisi'}
             </button>
           </div>
         </div>
 
         {summary != null && (
-          <div className='idx-portfolio-stats idx-mb-24'>
-            <div className='idx-stat'>
-              <span className='idx-stat-label'>Modal (cost)</span>
-              <span className='idx-stat-value'>{Utils.formatRp(summary.costBasis)}</span>
+          <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-6'>
+            <div className='flex flex-col'>
+              <span className='text-xs text-text-muted uppercase tracking-wider'>Modal (cost)</span>
+              <span className='text-lg font-semibold text-text'>{Utils.formatRp(summary.costBasis)}</span>
             </div>
-            <div className='idx-stat'>
-              <span className='idx-stat-label'>Nilai Pasar</span>
-              <span className='idx-stat-value'>{Utils.formatRp(summary.marketValue)}</span>
+            <div className='flex flex-col'>
+              <span className='text-xs text-text-muted uppercase tracking-wider'>Nilai Pasar</span>
+              <span className='text-lg font-semibold text-text'>{Utils.formatRp(summary.marketValue)}</span>
             </div>
-            <div className='idx-stat'>
-              <span className='idx-stat-label'>P&L</span>
-              <span className={`idx-stat-value ${pnlClass(summary.pnl)}`}>
+            <div className='flex flex-col'>
+              <span className='text-xs text-text-muted uppercase tracking-wider'>P&amp;L</span>
+              <span className={`text-lg font-semibold ${pnlClass(summary.pnl)}`}>
                 {Utils.formatRp(summary.pnl)} ({Utils.formatPct(summary.pnlPct != null ? summary.pnlPct * 100 : null)})
               </span>
             </div>
-            <div className='idx-stat'>
-              <span className='idx-stat-label'>Dividen 12 bulan</span>
-              <span className='idx-stat-value'>
+            <div className='flex flex-col'>
+              <span className='text-xs text-text-muted uppercase tracking-wider'>Dividen 12 bulan</span>
+              <span className='text-lg font-semibold text-text'>
                 {Utils.formatRp(summary.divAccrual)} ({Utils.formatPct(summary.divYieldOnCost != null ? summary.divYieldOnCost * 100 : null)})
               </span>
             </div>
           </div>
         )}
 
-        <div className='idx-card idx-mb-24'>
-          <div className='idx-card-header'>
-            <h2 className='idx-card-title'>Alokasi Sektor</h2>
+        <div className='rounded-lg border border-border bg-surface p-4 mb-6'>
+          <div className='flex items-center justify-between mb-4'>
+            <h2 className='text-lg font-semibold text-text'>Alokasi Sektor</h2>
           </div>
           {rows.length === 0 ? (
-            <p className='idx-empty'>Belum ada posisi. Tambahkan lewat form di atas.</p>
+            <p className='text-text-muted text-sm text-center py-8'>Belum ada posisi. Tambahkan lewat form di atas.</p>
           ) : (
             <AllocationBars rows={rows} />
           )}
         </div>
 
-        <div className='idx-card'>
-          <div className='idx-card-header'>
-            <h2 className='idx-card-title'>Posisi</h2>
-            {loading && <span className='idx-muted'>memuat...</span>}
+        <div className='rounded-lg border border-border bg-surface p-4'>
+          <div className='flex items-center justify-between mb-4'>
+            <h2 className='text-lg font-semibold text-text'>Posisi</h2>
+            {loading && <span className='text-text-muted text-sm'>memuat...</span>}
           </div>
           {rows.length === 0 && !loading ? (
-            <p className='idx-empty'>Belum ada posisi.</p>
+            <p className='text-text-muted text-sm text-center py-8'>Belum ada posisi.</p>
           ) : (
-            <div className='idx-table-wrap'>
-              <table className='idx-table'>
-                <thead>
+            <div className='overflow-x-auto'>
+              <table className='w-full text-sm text-text'>
+                <thead className='border-b border-border text-text-muted text-left'>
                   <tr>
-                    <th className='idx-table-col-kode'>Kode</th>
-                    <th className='idx-table-col-nama'>Nama</th>
-                    <th className='idx-table-col-sector'>Sektor</th>
-                    <th className='idx-table-th-right'>Lembar</th>
-                    <th className='idx-table-th-right'>Harga Beli</th>
-                    <th className='idx-table-th-right'>Harga Kini</th>
-                    <th className='idx-table-th-right'>Cost Basis</th>
-                    <th className='idx-table-th-right'>Nilai Pasar</th>
-                    <th className='idx-table-th-right'>P&L</th>
-                    <th className='idx-table-th-right'>Div/Lembar</th>
-                    <th className='idx-table-th-right'>Div (Rp)</th>
+                    <th className='font-medium py-2 px-2'>Kode</th>
+                    <th className='font-medium py-2 px-2 text-left'>Nama</th>
+                    <th className='font-medium py-2 px-2 text-left'>Sektor</th>
+                    <th className='font-medium py-2 px-2 text-right'>Lembar</th>
+                    <th className='font-medium py-2 px-2 text-right'>Harga Beli</th>
+                    <th className='font-medium py-2 px-2 text-right'>Harga Kini</th>
+                    <th className='font-medium py-2 px-2 text-right'>Cost Basis</th>
+                    <th className='font-medium py-2 px-2 text-right'>Nilai Pasar</th>
+                    <th className='font-medium py-2 px-2 text-right'>P&amp;L</th>
+                    <th className='font-medium py-2 px-2 text-right'>Div/Lembar</th>
+                    <th className='font-medium py-2 px-2 text-right'>Div (Rp)</th>
                     <th />
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className='divide-y divide-border/50'>
                   {rows.map((row) => {
                     const pnl = row.pnl ?? null
                     return (
-                      <tr key={row.code}>
-                        <td className='idx-table-col-kode'>{row.code}</td>
-                        <td className='idx-table-col-nama'>{row.name ?? '-'}</td>
-                        <td className='idx-table-col-sector'>{row.sector ?? '-'}</td>
-                        <td className='idx-table-td-right'>{Utils.formatNum(row.shares, 0)}</td>
-                        <td className='idx-table-td-right'>{Utils.formatRp(row.avgCost)}</td>
-                        <td className='idx-table-td-right'>{row.price != null ? Utils.formatRp(row.price) : '-'}</td>
-                        <td className='idx-table-td-right'>{Utils.formatRp(row.costBasis)}</td>
-                        <td className='idx-table-td-right'>{row.marketValue != null ? Utils.formatRp(row.marketValue) : '-'}</td>
-                        <td className={`idx-table-td-right ${pnlClass(pnl)}`}>
+                      <tr key={row.code} className='hover:bg-surface-elevated/50'>
+                        <td className='py-2 px-2 font-medium'>{row.code}</td>
+                        <td className='py-2 px-2 text-left'>{row.name ?? '-'}</td>
+                        <td className='py-2 px-2 text-left'>{row.sector ?? '-'}</td>
+                        <td className='py-2 px-2 text-right'>{Utils.formatNum(row.shares, 0)}</td>
+                        <td className='py-2 px-2 text-right'>{Utils.formatRp(row.avgCost)}</td>
+                        <td className='py-2 px-2 text-right'>{row.price != null ? Utils.formatRp(row.price) : '-'}</td>
+                        <td className='py-2 px-2 text-right'>{Utils.formatRp(row.costBasis)}</td>
+                        <td className='py-2 px-2 text-right'>{row.marketValue != null ? Utils.formatRp(row.marketValue) : '-'}</td>
+                        <td className={`py-2 px-2 text-right ${pnlClass(pnl)}`}>
                           {pnl != null
                             ? `${Utils.formatRp(pnl)} (${Utils.formatPct(row.pnlPct != null ? row.pnlPct * 100 : null)})`
                             : '-'}
                         </td>
-                        <td className='idx-table-td-right'>{row.divPerShare12m != null ? Utils.formatRp(row.divPerShare12m) : '-'}</td>
-                        <td className='idx-table-td-right'>{row.divAccrual != null ? Utils.formatRp(row.divAccrual) : '-'}</td>
-                        <td className='idx-table-td-right'>
+                        <td className='py-2 px-2 text-right'>{row.divPerShare12m != null ? Utils.formatRp(row.divPerShare12m) : '-'}</td>
+                        <td className='py-2 px-2 text-right'>{row.divAccrual != null ? Utils.formatRp(row.divAccrual) : '-'}</td>
+                        <td className='py-2 px-2 text-right'>
                           <button
                             type='button'
-                            className='idx-btn-ghost'
+                            className='text-text-muted hover:text-down text-sm'
                             aria-label={`Hapus ${row.code}`}
                             onClick={() => handleDelete(row.code)}
                             disabled={busy}

@@ -22,7 +22,7 @@ function EquityChart({
   equity: { date: number; strategy: number; benchmark: number }[]
 }) {
   if (equity.length === 0) {
-    return <p className='idx-muted'>Belum ada data kurva.</p>
+    return <p className='text-text-muted py-8 text-center'>Belum ada data kurva.</p>
   }
   const width = 860
   const height = 280
@@ -46,17 +46,17 @@ function EquityChart({
           strokeWidth={1.5}
           strokeDasharray='4 3'
         />
-        <polyline points={line('strategy')} fill='none' stroke='#2563eb' strokeWidth={2.5} />
+        <polyline points={line('strategy')} fill='none' stroke='#39ff14' strokeWidth={2.5} />
       </svg>
-      <div className='idx-legend'>
-        <span className='idx-legend-item'>
-          <span className='idx-legend-dot idx-legend-dot-strategy' /> Strategi
+      <div className='flex items-center gap-3 text-xs text-text-muted mt-2'>
+        <span className='flex items-center gap-1'>
+          <span className='w-2 h-2 rounded-full bg-accent' /> Strategi
         </span>
-        <span className='idx-legend-item'>
-          <span className='idx-legend-dot idx-legend-dot-benchmark' /> Benchmark (rata-rata pasar)
+        <span className='flex items-center gap-1'>
+          <span className='w-2 h-2 rounded-full bg-slate-400' /> Benchmark (rata-rata pasar)
         </span>
         {last != null && (
-          <span className='idx-legend-date'>
+          <span className='ml-auto'>
             Terakhir: {Utils.Format.formatNum(last.date, 0)}
           </span>
         )}
@@ -101,25 +101,25 @@ export default function Backtest() {
   const fmtX = (v: number | undefined) => `${(v != null ? v * 100 : 0).toFixed(1)}%`
 
   return (
-    <div className='idx-page'>
-      <div className='idx-main'>
-        <h1 className='idx-h1'>Backtest Strategi</h1>
-        <p className='idx-muted'>
+    <div className='min-h-screen bg-background'>
+      <div className='max-w-4xl mx-auto px-4 py-8'>
+        <h1 className='text-2xl font-bold'>Backtest Strategi</h1>
+        <p className='text-text-muted'>
           Uji aturan screening terhadap 2 tahun data historis. Rebalance berkala, portofolio
           equal-weight, dibandingkan dengan benchmark IHSG (COMPOSITE) atau rata-rata pasar bila
           data indeks belum tersedia. Strategi value memakai PER dari laporan keuangan kuartalan
           historis.
         </p>
 
-        <div className='idx-card idx-mb-24'>
-          <div className='idx-backtest-controls'>
-            <div className='idx-form-group'>
-              <label className='idx-form-label' htmlFor='bt-strategy'>
+        <div className='rounded-lg border border-border bg-surface p-4 mb-6'>
+          <div className='grid grid-cols-2 sm:grid-cols-3 gap-3'>
+            <div className='flex flex-col gap-1'>
+              <label className='text-sm font-medium text-text-muted' htmlFor='bt-strategy'>
                 Strategi
               </label>
               <select
                 id='bt-strategy'
-                className='idx-select'
+                className='h-9 rounded-md border border-border bg-surface px-3 text-sm text-text'
                 value={strategy}
                 onChange={(e) => setStrategy(e.target.value as Strategy)}
               >
@@ -128,27 +128,27 @@ export default function Backtest() {
                 <option value='value'>Value (PER)</option>
               </select>
             </div>
-            <div className='idx-form-group'>
-              <label className='idx-form-label' htmlFor='bt-topn'>
+            <div className='flex flex-col gap-1'>
+              <label className='text-sm font-medium text-text-muted' htmlFor='bt-topn'>
                 Top N
               </label>
               <input
                 id='bt-topn'
                 type='number'
-                className='idx-input'
+                className='h-9 rounded-md border border-border bg-surface px-3 text-sm text-text'
                 min={1}
                 max={50}
                 value={topN}
                 onChange={(e) => setTopN(Number(e.target.value) || 10)}
               />
             </div>
-            <div className='idx-form-group'>
-              <label className='idx-form-label' htmlFor='bt-rebalance'>
+            <div className='flex flex-col gap-1'>
+              <label className='text-sm font-medium text-text-muted' htmlFor='bt-rebalance'>
                 Rebalance (minggu)
               </label>
               <select
                 id='bt-rebalance'
-                className='idx-select'
+                className='h-9 rounded-md border border-border bg-surface px-3 text-sm text-text'
                 value={rebalanceWeeks}
                 onChange={(e) => setRebalanceWeeks(Number(e.target.value) as 4 | 12 | 26)}
               >
@@ -157,32 +157,32 @@ export default function Backtest() {
                 <option value={26}>26 minggu</option>
               </select>
             </div>
-            <div className='idx-form-group'>
-              <label className='idx-form-label' htmlFor='bt-start'>
+            <div className='flex flex-col gap-1'>
+              <label className='text-sm font-medium text-text-muted' htmlFor='bt-start'>
                 Mulai (yyyymmdd)
               </label>
               <input
                 id='bt-start'
                 type='text'
-                className='idx-input'
+                className='h-9 rounded-md border border-border bg-surface px-3 text-sm text-text'
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
             </div>
-            <div className='idx-form-group'>
-              <label className='idx-form-label' htmlFor='bt-minvalue'>
+            <div className='flex flex-col gap-1'>
+              <label className='text-sm font-medium text-text-muted' htmlFor='bt-minvalue'>
                 Min Value (Rp)
               </label>
               <input
                 id='bt-minvalue'
                 type='text'
-                className='idx-input'
+                className='h-9 rounded-md border border-border bg-surface px-3 text-sm text-text'
                 value={minValue}
                 onChange={(e) => setMinValue(e.target.value)}
               />
             </div>
-            <div className='idx-form-group'>
-              <label className='idx-form-label'>
+            <div className='flex flex-col gap-1'>
+              <label className='text-sm font-medium text-text-muted'>
                 <input
                   type='checkbox'
                   checked={excludeNotation}
@@ -191,10 +191,10 @@ export default function Backtest() {
                 Exclude Notation
               </label>
             </div>
-            <div className='idx-form-group'>
+            <div className='flex flex-col gap-1'>
               <button
                 type='button'
-                className='idx-btn'
+                className='h-9 rounded-md bg-accent px-4 text-sm font-semibold text-background'
                 disabled={loading}
                 onClick={handleRun}
               >
@@ -202,83 +202,83 @@ export default function Backtest() {
               </button>
             </div>
           </div>
-          {error != null && <p className='idx-error'>{error}</p>}
+          {error != null && <p className='text-red-500 text-sm mt-2'>{error}</p>}
         </div>
 
         {result != null && stats != null && (
           <>
-            <div className='idx-card idx-mb-24'>
-              <h2 className='idx-card-title'>Hasil ({STRATEGY_LABEL[strategy]})</h2>
-              <div className='idx-backtest-stats'>
-                <div className='idx-stat'>
-                  <span className='idx-stat-label'>Return Strategi</span>
-                  <span className='idx-stat-value'>{fmtX(stats.strategyTotal)}</span>
+            <div className='rounded-lg border border-border bg-surface p-4 mb-6'>
+              <h2 className='text-lg font-semibold text-text mb-3'>Hasil ({STRATEGY_LABEL[strategy]})</h2>
+              <div className='grid grid-cols-3 sm:grid-cols-6 gap-3'>
+                <div className='flex flex-col'>
+                  <span className='text-xs text-text-muted'>Return Strategi</span>
+                  <span className='text-sm font-medium text-text'>{fmtX(stats.strategyTotal)}</span>
                 </div>
-                <div className='idx-stat'>
-                  <span className='idx-stat-label'>Return Benchmark</span>
-                  <span className='idx-stat-value'>{fmtX(stats.benchmarkTotal)}</span>
+                <div className='flex flex-col'>
+                  <span className='text-xs text-text-muted'>Return Benchmark</span>
+                  <span className='text-sm font-medium text-text'>{fmtX(stats.benchmarkTotal)}</span>
                 </div>
-                <div className='idx-stat'>
-                  <span className='idx-stat-label'>Excess</span>
+                <div className='flex flex-col'>
+                  <span className='text-xs text-text-muted'>Excess</span>
                   <span
-                    className={`idx-stat-value ${
-                      stats.excess >= 0 ? 'idx-pct-up' : 'idx-pct-down'
+                    className={`text-sm font-medium ${
+                      stats.excess >= 0 ? 'text-green-400' : 'text-red-400'
                     }`}
                   >
                     {fmtX(stats.excess)}
                   </span>
                 </div>
-                <div className='idx-stat'>
-                  <span className='idx-stat-label'>Annualized</span>
-                  <span className='idx-stat-value'>{fmtPct(stats.annualized)}</span>
+                <div className='flex flex-col'>
+                  <span className='text-xs text-text-muted'>Annualized</span>
+                  <span className='text-sm font-medium text-text'>{fmtPct(stats.annualized)}</span>
                 </div>
-                <div className='idx-stat'>
-                  <span className='idx-stat-label'>Max Drawdown</span>
-                  <span className='idx-stat-value'>{fmtPct(-stats.maxDrawdown)}</span>
+                <div className='flex flex-col'>
+                  <span className='text-xs text-text-muted'>Max Drawdown</span>
+                  <span className='text-sm font-medium text-text'>{fmtPct(-stats.maxDrawdown)}</span>
                 </div>
-                <div className='idx-stat'>
-                  <span className='idx-stat-label'>Win Rate</span>
-                  <span className='idx-stat-value'>{fmtPct(stats.winRate)}</span>
+                <div className='flex flex-col'>
+                  <span className='text-xs text-text-muted'>Win Rate</span>
+                  <span className='text-sm font-medium text-text'>{fmtPct(stats.winRate)}</span>
                 </div>
-                <div className='idx-stat'>
-                  <span className='idx-stat-label'>Periode</span>
-                  <span className='idx-stat-value'>{stats.periods}</span>
+                <div className='flex flex-col'>
+                  <span className='text-xs text-text-muted'>Periode</span>
+                  <span className='text-sm font-medium text-text'>{stats.periods}</span>
                 </div>
-                <div className='idx-stat'>
-                  <span className='idx-stat-label'>Benchmark</span>
-                  <span className='idx-stat-value'>{result.benchmarkLabel}</span>
+                <div className='flex flex-col'>
+                  <span className='text-xs text-text-muted'>Benchmark</span>
+                  <span className='text-sm font-medium text-text'>{result.benchmarkLabel}</span>
                 </div>
               </div>
             </div>
 
-            <div className='idx-card idx-mb-24'>
-              <h2 className='idx-card-title'>Kurva Equity</h2>
+            <div className='rounded-lg border border-border bg-surface p-4 mb-6'>
+              <h2 className='text-lg font-semibold text-text mb-3'>Kurva Equity</h2>
               <EquityChart equity={result.equity} />
             </div>
 
-            <div className='idx-card'>
-              <h2 className='idx-card-title'>
+            <div className='rounded-lg border border-border bg-surface p-4'>
+              <h2 className='text-lg font-semibold text-text mb-3'>
                 Holdings Terakhir (Top {result.params.topN})
               </h2>
-              <div className='idx-table-wrap'>
-                <table className='idx-table'>
+              <div className='overflow-x-auto'>
+                <table className='w-full text-sm text-left'>
                   <thead>
                     <tr>
-                      <th className='idx-table-col-kode'>Kode</th>
-                      <th className='idx-table-col-nama'>Nama</th>
-                      <th className='idx-table-th-right'>
+                      <th className='px-3 py-2 font-medium text-text'>Kode</th>
+                      <th className='px-3 py-2 text-text-muted'>Nama</th>
+                      <th className='px-3 py-2 text-right text-text-muted'>
                         {strategy === 'rsi' ? 'RSI' : strategy === 'value' ? 'PER' : 'Momentum'}
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {result.lastHoldings.map((h) => (
-                      <tr key={h.code}>
-                        <td className='idx-table-col-kode'>
-                          <span className='idx-table-code-bold'>{h.code}</span>
+                      <tr key={h.code} className='border-t border-border'>
+                        <td className='px-3 py-2'>
+                          <span className='font-semibold text-text'>{h.code}</span>
                         </td>
-                        <td className='idx-table-col-nama'>{h.name ?? '-'}</td>
-                        <td className='idx-table-td-right'>
+                        <td className='px-3 py-2 text-text-muted'>{h.name ?? '-'}</td>
+                        <td className='px-3 py-2 text-right text-text'>
                           {Utils.Format.formatNum(h.metric, 2)}
                         </td>
                       </tr>

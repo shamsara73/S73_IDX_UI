@@ -1,9 +1,6 @@
 /**
  * Copyright (c) 2026 IDX Screener by @NeaByteLab (https://neabyte.com)
  * SPDX-License-Identifier: MIT
- *
- * Open to remote work & consulting.
- * Fullstack developer with a focus on security and experience in trading systems.
  */
 
 import React, { useMemo, useState } from 'react'
@@ -12,7 +9,7 @@ import * as Hooks from '@app/pages/hooks/index.ts'
 import * as Utils from '@app/pages/utils/index.ts'
 import type * as Types from '@app/pages/Types.ts'
 
-const historicalPresets: { days: number; label: string }[] = [
+const presets = [
   { days: 7, label: '1W' },
   { days: 14, label: '2W' },
   { days: 30, label: '1M' },
@@ -22,123 +19,103 @@ const historicalPresets: { days: number; label: string }[] = [
 ]
 
 export default function Historical() {
-  const [periodDays, setPeriodDays] = useState<number>(30)
+  const [periodDays, setPeriodDays] = useState(30)
   const todayInt = useMemo(() => Utils.Format.getTodayDateInt(), [])
   const end = todayInt
   const start = Utils.Format.addDaysToDateInt(end, -periodDays + 1)
   const { data, loading, error } = Hooks.useBidOfferHistory(start, end)
-  const sectorRows: Types.HistoryBidOfferSectorItem[] = useMemo(() => {
-    if (!data?.bySector?.length) {
-      return []
-    }
-    return data.bySector
-  }, [data])
+  const sectorRows: Types.HistoryBidOfferSectorItem[] = useMemo(() => data?.bySector ?? [], [data])
 
   return (
-    <div className='idx-main'>
-      <section className='idx-card idx-px-24 idx-py-16 idx-historical-card'>
-        <div className='idx-dashboard-header idx-mb-0'>
+    <div className='mx-auto max-w-7xl px-4 py-6'>
+      <div className='rounded-lg border border-border bg-surface p-6'>
+        {/* Header */}
+        <div className='mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
           <div>
-            <h2 className='idx-dashboard-title'>
-              <History size={28} strokeWidth={2} aria-hidden />
-              <span>Bid vs Offer Historis</span>
+            <h2 className='flex items-center gap-2 text-xl font-bold'>
+              <History size={22} className='text-accent' />
+              Bid vs Offer Historis
             </h2>
-            <p className='idx-dashboard-subtitle'>
-              Periode: {Utils.Format.formatDateInt(start)} &ndash; {Utils.Format.formatDateInt(end)}
+            <p className='mt-1 text-sm text-text-muted'>
+              Periode: {Utils.Format.formatDateInt(start)} – {Utils.Format.formatDateInt(end)}
             </p>
           </div>
-          <div className='idx-tabs'>
-            {historicalPresets.map((preset) => (
+          <div className='flex gap-1'>
+            {presets.map((p) => (
               <button
-                key={preset.days}
+                key={p.days}
                 type='button'
-                className={`idx-tab idx-tab-inline ${
-                  periodDays === preset.days ? 'idx-tab-active' : ''
+                onClick={() => setPeriodDays(p.days)}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                  periodDays === p.days
+                    ? 'bg-accent/10 text-accent'
+                    : 'text-text-muted hover:bg-surface-elevated hover:text-text'
                 }`}
-                onClick={() => setPeriodDays(preset.days)}
               >
-                <span>{preset.label}</span>
+                {p.label}
               </button>
             ))}
           </div>
         </div>
-        {loading && <div className='idx-loading'>Memuat data bid/offer historis...</div>}
-        {!loading && error && <div className='idx-error'>{error}</div>}
+
+        {/* States */}
+        {loading && <p className='py-8 text-center text-text-muted'>Memuat data...</p>}
+        {error != null && <p className='py-8 text-center text-down'>{error}</p>}
         {!loading && !error && sectorRows.length === 0 && (
-          <div className='idx-card-center'>
-            <p className='idx-p-muted'>Tidak ada data bid/offer historis untuk periode ini.</p>
-          </div>
+          <p className='py-8 text-center text-text-dim'>Tidak ada data untuk periode ini.</p>
         )}
+
+        {/* Table */}
         {!loading && !error && sectorRows.length > 0 && (
-          <div className='idx-table-wrap idx-historical-table-wrap'>
-            <table className='idx-detail-table idx-historical-table'>
+          <div className='overflow-x-auto'>
+            <table className='w-full text-sm'>
               <thead>
-                <tr>
-                  <th>Sektor</th>
-                  <th>Total Bid</th>
-                  <th>Total Offer</th>
-                  <th>Hari</th>
-                  <th>Rata-rata Bid/Hari</th>
-                  <th>Rata-rata Offer/Hari</th>
-                  <th>Bid/Offer</th>
+                <tr className='border-b border-border text-left text-xs text-text-muted'>
+                  <th className='pb-2 pr-4 font-medium'>Sektor</th>
+                  <th className='pb-2 pr-4 text-right font-medium'>Total Bid</th>
+                  <th className='pb-2 pr-4 text-right font-medium'>Total Offer</th>
+                  <th className='pb-2 pr-4 text-right font-medium'>Hari</th>
+                  <th className='pb-2 pr-4 text-right font-medium'>Avg Bid/Hari</th>
+                  <th className='pb-2 pr-4 text-right font-medium'>Avg Offer/Hari</th>
+                  <th className='pb-2 font-medium'>Bid/Offer</th>
                 </tr>
               </thead>
               <tbody>
-                {sectorRows.map((sectorItem) => (
-                  <tr key={sectorItem.sector}>
-                    <td>{sectorItem.sector}</td>
-                    <td>{Utils.Format.formatNum(sectorItem.totalBid, 0)}</td>
-                    <td>{Utils.Format.formatNum(sectorItem.totalOffer, 0)}</td>
-                    <td>{sectorItem.dayCount}</td>
-                    <td>{Utils.Format.formatNum(sectorItem.avgBid, 0)}</td>
-                    <td>{Utils.Format.formatNum(sectorItem.avgOffer, 0)}</td>
-                    <td className='idx-ratio-cell'>
-                      {sectorItem.totalBid + sectorItem.totalOffer > 0
-                        ? (
-                          <span
-                            className='idx-ratio-inline'
-                            title={`Bid ${Utils.Format.formatNum(sectorItem.ratio, 2)}× Offer`}
-                          >
-                            <span className='idx-ratio-bar' aria-hidden>
-                              <span
-                                className='idx-ratio-bar-offer'
-                                style={{
-                                  width: `${
-                                    (sectorItem.totalOffer /
-                                      (sectorItem.totalBid + sectorItem.totalOffer)) *
-                                    100
-                                  }%`
-                                }}
-                              />
-                              <span
-                                className='idx-ratio-bar-bid'
-                                style={{
-                                  width: `${
-                                    (sectorItem.totalBid /
-                                      (sectorItem.totalBid + sectorItem.totalOffer)) *
-                                    100
-                                  }%`
-                                }}
-                              />
+                {sectorRows.map((r) => {
+                  const total = r.totalBid + r.totalOffer
+                  const bidPct = total > 0 ? (r.totalBid / total) * 100 : 50
+                  const offerPct = total > 0 ? (r.totalOffer / total) * 100 : 50
+                  return (
+                    <tr key={r.sector} className='border-b border-border-subtle hover:bg-surface-elevated/50'>
+                      <td className='py-2.5 pr-4 font-medium'>{r.sector}</td>
+                      <td className='py-2.5 pr-4 text-right tabular-nums text-up'>{Utils.Format.formatNum(r.totalBid, 0)}</td>
+                      <td className='py-2.5 pr-4 text-right tabular-nums text-down'>{Utils.Format.formatNum(r.totalOffer, 0)}</td>
+                      <td className='py-2.5 pr-4 text-right tabular-nums'>{r.dayCount}</td>
+                      <td className='py-2.5 pr-4 text-right tabular-nums'>{Utils.Format.formatNum(r.avgBid, 0)}</td>
+                      <td className='py-2.5 pr-4 text-right tabular-nums'>{Utils.Format.formatNum(r.avgOffer, 0)}</td>
+                      <td className='py-2.5'>
+                        {total > 0 ? (
+                          <div className='flex items-center gap-2'>
+                            <div className='h-2 flex-1 overflow-hidden rounded-full bg-down/20'>
+                              <div className='flex h-full'>
+                                <div className='bg-up' style={{ width: `${bidPct}%` }} />
+                                <div className='bg-down' style={{ width: `${offerPct}%` }} />
+                              </div>
+                            </div>
+                            <span className='w-10 text-right text-xs tabular-nums text-text-muted'>
+                              {r.ratio != null ? Utils.Format.formatNum(r.ratio, 2) : '—'}
                             </span>
-                            <span className='idx-ratio-value'>
-                              {sectorItem.ratio != null
-                                ? Utils.Format.formatNum(sectorItem.ratio, 2)
-                                : '-'}
-                            </span>
-                          </span>
-                        )
-                        : (
-                          '-'
-                        )}
-                    </td>
-                  </tr>
-                ))}
+                          </div>
+                        ) : '—'}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
         )}
-      </section>
+      </div>
     </div>
   )
 }

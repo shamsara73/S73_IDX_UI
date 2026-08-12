@@ -109,77 +109,77 @@ export default function Journal() {
   }, [fetchEntries])
 
   return (
-    <div className='idx-main idx-container'>
-      <h1 className='idx-h1'>Journal Trading</h1>
-      <p className='idx-muted'>Catat entry/exit, hitung P&L per trade, track performa harian.</p>
+    <div className='max-w-6xl mx-auto px-4 py-8'>
+      <h1 className='text-2xl font-bold'>Journal Trading</h1>
+      <p className='text-text-muted'>Catat entry/exit, hitung P&L per trade, track performa harian.</p>
 
       {/* Stats */}
-      <div className='idx-dashboard-stats idx-mb-24'>
-        <div className='idx-stat'>
-          <span className='idx-stat-label'>Total Trade</span>
-          <span className='idx-stat-value'>{closed.length}</span>
+      <div className='grid grid-cols-3 gap-4 mb-6 mt-6'>
+        <div className='flex flex-col gap-1 rounded-lg border border-border bg-surface p-4'>
+          <span className='text-text-muted text-sm'>Total Trade</span>
+          <span className='text-xl font-bold text-accent'>{closed.length}</span>
         </div>
-        <div className='idx-stat'>
-          <span className='idx-stat-label'>Win Rate</span>
-          <span className='idx-stat-value'>{winRate.toFixed(0)}%</span>
+        <div className='flex flex-col gap-1 rounded-lg border border-border bg-surface p-4'>
+          <span className='text-text-muted text-sm'>Win Rate</span>
+          <span className='text-xl font-bold text-accent'>{winRate.toFixed(0)}%</span>
         </div>
-        <div className='idx-stat'>
-          <span className='idx-stat-label'>Total P&L</span>
-          <span className={`idx-stat-value ${totalPnl >= 0 ? 'idx-pnl-positive' : 'idx-pnl-negative'}`}>
+        <div className='flex flex-col gap-1 rounded-lg border border-border bg-surface p-4'>
+          <span className='text-text-muted text-sm'>Total P&L</span>
+          <span className={`text-xl font-bold ${totalPnl >= 0 ? 'text-up' : 'text-down'}`}>
             {Utils.formatRp(totalPnl)}
           </span>
         </div>
       </div>
 
       {/* Add form */}
-      <form className='idx-portfolio-form idx-mb-24' onSubmit={handleAdd}>
-        <input className='idx-input' placeholder='Kode (BBRI)' value={code} onChange={(e) => setCode(e.target.value)} />
-        <select className='idx-input' value={direction} onChange={(e) => setDirection(e.target.value as 'long' | 'short')}>
+      <form className='flex flex-wrap items-center gap-2 mb-6' onSubmit={handleAdd}>
+        <input className='h-9 rounded-md border border-border bg-surface px-3 text-sm text-text' placeholder='Kode (BBRI)' value={code} onChange={(e) => setCode(e.target.value)} />
+        <select className='h-9 rounded-md border border-border bg-surface px-3 text-sm text-text' value={direction} onChange={(e) => setDirection(e.target.value as 'long' | 'short')}>
           <option value='long'>Long</option>
           <option value='short'>Short</option>
         </select>
-        <input className='idx-input' type='number' step='any' placeholder='Entry Price' value={entryPrice} onChange={(e) => setEntryPrice(e.target.value)} />
-        <input className='idx-input' placeholder='Alasan (opsional)' value={reason} onChange={(e) => setReason(e.target.value)} />
-        <input className='idx-input' placeholder='Catatan (opsional)' value={note} onChange={(e) => setNote(e.target.value)} />
-        <button type='submit' className='idx-btn idx-btn-primary' disabled={submitting}>Catat Trade</button>
+        <input className='h-9 rounded-md border border-border bg-surface px-3 text-sm text-text' type='number' step='any' placeholder='Entry Price' value={entryPrice} onChange={(e) => setEntryPrice(e.target.value)} />
+        <input className='h-9 rounded-md border border-border bg-surface px-3 text-sm text-text' placeholder='Alasan (opsional)' value={reason} onChange={(e) => setReason(e.target.value)} />
+        <input className='h-9 rounded-md border border-border bg-surface px-3 text-sm text-text' placeholder='Catatan (opsional)' value={note} onChange={(e) => setNote(e.target.value)} />
+        <button type='submit' className='bg-accent text-background px-4 py-1.5 rounded-md font-medium' disabled={submitting}>Catat Trade</button>
       </form>
 
       {/* Table */}
       {loading ? (
-        <p className='idx-p-muted'>Memuat journal...</p>
+        <p className='text-text-muted'>Memuat journal...</p>
       ) : entries.length === 0 ? (
-        <p className='idx-p-muted'>Belum ada trade. Catat yang pertama di atas.</p>
+        <p className='text-text-muted'>Belum ada trade. Catat yang pertama di atas.</p>
       ) : (
-        <div className='idx-table-wrap'>
-          <table className='idx-table'>
+        <div className='overflow-x-auto rounded-lg border border-border'>
+          <table className='w-full text-sm'>
             <thead>
-              <tr>
-                <th>Tanggal</th>
-                <th>Kode</th>
-                <th>Arah</th>
-                <th className='idx-table-th-right'>Entry</th>
-                <th className='idx-table-th-right'>Exit</th>
-                <th className='idx-table-th-right'>P&L</th>
-                <th>Alasan</th>
-                <th></th>
+              <tr className='border-b border-border bg-surface'>
+                <th className='px-3 py-2 text-left text-text-muted font-medium'>Tanggal</th>
+                <th className='px-3 py-2 text-left text-text-muted font-medium'>Kode</th>
+                <th className='px-3 py-2 text-left text-text-muted font-medium'>Arah</th>
+                <th className='px-3 py-2 text-right text-text-muted font-medium'>Entry</th>
+                <th className='px-3 py-2 text-right text-text-muted font-medium'>Exit</th>
+                <th className='px-3 py-2 text-right text-text-muted font-medium'>P&L</th>
+                <th className='px-3 py-2 text-left text-text-muted font-medium'>Alasan</th>
+                <th className='px-3 py-2 text-left text-text-muted font-medium'></th>
               </tr>
             </thead>
             <tbody>
               {entries.map((e) => {
                 const pnl = e.pnl
                 return (
-                  <tr key={e.id}>
-                    <td>{e.date != null ? Utils.formatDateInt(e.date) : '-'}</td>
-                    <td className='idx-table-code-bold'>{e.code}</td>
-                    <td>{e.direction === 'long' ? '🟢 Long' : '🔴 Short'}</td>
-                    <td className='idx-table-td-right'>{Utils.formatNum(e.entryPrice, 0)}</td>
-                    <td className='idx-table-td-right'>{e.exitPrice != null ? Utils.formatNum(e.exitPrice, 0) : <CloseTradeInput id={e.id} onConfirm={handleClose} />}</td>
-                    <td className={`idx-table-td-right ${pnl != null ? (pnl >= 0 ? 'idx-pnl-positive' : 'idx-pnl-negative') : ''}`}>
+                  <tr key={e.id} className='border-b border-border hover:bg-surface/50'>
+                    <td className='px-3 py-2'>{e.date != null ? Utils.formatDateInt(e.date) : '-'}</td>
+                    <td className='px-3 py-2 font-bold'>{e.code}</td>
+                    <td className='px-3 py-2'>{e.direction === 'long' ? '🟢 Long' : '🔴 Short'}</td>
+                    <td className='px-3 py-2 text-right'>{Utils.formatNum(e.entryPrice, 0)}</td>
+                    <td className='px-3 py-2 text-right'>{e.exitPrice != null ? Utils.formatNum(e.exitPrice, 0) : <CloseTradeInput id={e.id} onConfirm={handleClose} />}</td>
+                    <td className={`px-3 py-2 text-right ${pnl != null ? (pnl >= 0 ? 'text-up' : 'text-down') : ''}`}>
                       {pnl != null ? Utils.formatRp(pnl) : '-'}
                     </td>
-                    <td className='idx-table-col-nama'>{e.reason ?? '-'}</td>
-                    <td>
-                      <button type='button' className='idx-btn-ghost' onClick={() => handleDelete(e.id)} aria-label='Hapus'>✕</button>
+                    <td className='px-3 py-2'>{e.reason ?? '-'}</td>
+                    <td className='px-3 py-2'>
+                      <button type='button' className='text-text-muted hover:text-down' onClick={() => handleDelete(e.id)} aria-label='Hapus'>✕</button>
                     </td>
                   </tr>
                 )
@@ -195,9 +195,9 @@ export default function Journal() {
 function CloseTradeInput({ id, onConfirm }: { id: number; onConfirm: (id: number, price: number) => void }) {
   const [val, setVal] = useState('')
   return (
-    <span className='idx-journal-close'>
-      <input className='idx-input' type='number' step='any' placeholder='Exit' value={val} onChange={(e) => setVal(e.target.value)} style={{ width: 90, padding: '2px 6px', fontSize: 12 }} />
-      <button type='button' className='idx-btn-ghost' onClick={() => { const p = parseFloat(val); if (Number.isFinite(p)) onConfirm(id, p) }} style={{ fontSize: 11 }}>✓</button>
+    <span className='inline-flex items-center gap-1'>
+      <input className='h-7 rounded border border-border bg-surface px-2 text-xs text-text' type='number' step='any' placeholder='Exit' value={val} onChange={(e) => setVal(e.target.value)} style={{ width: 90 }} />
+      <button type='button' className='text-text-muted hover:text-down text-xs' onClick={() => { const p = parseFloat(val); if (Number.isFinite(p)) onConfirm(id, p) }}>✓</button>
     </span>
   )
 }
