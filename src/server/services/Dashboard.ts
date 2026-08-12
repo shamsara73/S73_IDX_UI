@@ -33,6 +33,10 @@ export interface DashboardData {
   watchlist: { code: string; price: number | null; changePct: number | null }[]
   topCandidates: { code: string; name: string | null; sector: string | null; composite: number; per: number | null; roe: number | null; week26: number | null }[]
   sectorStrength: { sector: string; avgMomentum: number; count: number }[]
+  topMovers: { code: string; name: string | null; changePct: number; price: number }[]
+  foreignFlow: { sector: string; net: number }[]
+  breadth: { advance: number; decline: number; unchanged: number; total: number }
+  highestValue: { code: string; name: string | null; value: number; price: number; changePct: number }[]
 }
 
 export class Dashboard {
@@ -168,6 +172,61 @@ export class Dashboard {
       .sort((a, b) => b.avgMomentum - a.avgMomentum)
       .slice(0, 5)
 
-    return { globalMarkets: globalMarkets.status === 'fulfilled' ? globalMarkets.value : [], headlines, suspensions, uma, relistings, announcements, portfolio, watchlist, topCandidates, sectorStrength }
+    // Market data from stock_summary (today)
+    const summaryDate = await Database.select({ date: Schemas.summary.date }).from(Schemas.summary).orderBy(desc(Schemas.summary.date)).limit(1)
+    const todayDateInt = summaryDate[0]?.date ?? 0
+
+    let topMovers: DashboardData['topMovers'] = []
+    let foreignFlow: DashboardData['foreignFlow'] = []
+    let breadth: DashboardData['breadth'] = { advance: 0, decline: 0, unchanged: 0, total: 0 }
+    let highestValue: DashboardData['highestValue'] = []
+
+    if (todayDateInt > 0) {
+      const todaySummary = await Database.select({
+        code: Schemas.summary.stockCode, name: Schemas.summary.stockName, sector: Schemas.summary.sector,
+        priceClose: Schemas.summary.priceClose, priceChange: Schemas.summary.priceChange,
+        value: Schemas.summary.value, foreignBuy: Schemas.summary.foreignBuy, foreignSell: Schemas.summary.foreignSell
+      }).from(Schemas.summary).where(eq(Schemas.summary.date, todayDateInt))
+
+      // Top movers (biggest gainers + losers)
+      const withPct = todaySummary.map((r) => ({
+        code: r.code, name: r.name, price: r.priceClose ?? 0,
+        changePct: r.priceClose != null && r.priceChange != null && r.priceClose > 0 ? r.priceChange / (r.priceClose - r.priceChange) : 0
+      })).filter((r) => r.price > 0 && Number.isFinite(r.changePct))
+      const sorted = [...withPct].sort((a, b) => b.changePct - a.changePct)
+      topMovers = [...sorted.slice(0, 5), ...sorted.slice(-5).reverse()]
+
+      // Foreign flow by sector
+      const sectorForeign = new Map<string, number>()
+      for (const r of todaySummary) {
+        const sector = r.sector ?? 'Lainnya'
+        const net = (r.foreignBuy ?? 0) - (r.foreignSell ?? 0)
+        sectorForeign.set(sector, (sectorForeign.get(sector) ?? 0) + net)
+      }
+      foreignFlow = [...sectorForeign.entries()]
+        .map(([sector, net]) => ({ sector, net }))
+        .sort((a, b) => b.net - a.net)
+        .slice(0, 8)
+
+      // Market breadth
+      for (const r of withPct) {
+        if (r.changePct > 0) breadth.advance++
+        else if (r.changePct < 0) breadth.decline++
+        else breadth.unchanged++
+      }
+      breadth.total = withPct.length
+
+      // Highest value (most liquid)
+      highestValue = todaySummary
+        .filter((r) => (r.value ?? 0) > 0)
+        .map((r) => ({
+          code: r.code, name: r.name, value: r.value ?? 0, price: r.priceClose ?? 0,
+          changePct: r.priceClose != null && r.priceChange != null && r.priceClose > 0 ? r.priceChange / (r.priceClose - r.priceChange) : 0
+        }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5)
+    }
+
+    return { globalMarkets: globalMarkets.status === 'fulfilled' ? globalMarkets.value : [], headlines, suspensions, uma, relistings, announcements, portfolio, watchlist, topCandidates, sectorStrength, topMovers, foreignFlow, breadth, highestValue }
   }
 }

@@ -7,7 +7,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { BarChart2, Star, TrendingUp } from 'lucide-react'
+import { BarChart2, Star } from 'lucide-react'
 import * as ScreenerComps from '@app/pages/components/screener/index.ts'
 import * as Hooks from '@app/pages/hooks/index.ts'
 import * as Utils from '@app/pages/utils/index.ts'
@@ -115,18 +115,6 @@ export default function Screener() {
       /* ignore */
     }
   }, [])
-  const {
-    data: screenerRsiData,
-    loading: screenerRsiLoading,
-    error: screenerRsiError,
-    refetch: refetchScreenerRsi
-  } = Hooks.useScreenerRsi()
-  const {
-    data: screenerBidOfferData,
-    loading: screenerBidOfferLoading,
-    error: screenerBidOfferError,
-    refetch: refetchScreenerBidOffer
-  } = Hooks.useScreenerBidOffer()
   const sectors = generalData?.sectors ?? []
   useEffect(() => {
     const trimmed = searchQuery.trim()
@@ -302,8 +290,7 @@ export default function Screener() {
       <div className='mb-4 flex gap-1 border-b border-border pb-px'>
         {[
           { id: 'watchlist' as const, label: 'Watchlist', icon: Star },
-          { id: 'fundamental' as const, label: 'Analisa Fundamental', icon: BarChart2 },
-          { id: 'technical' as const, label: 'Analisa Teknikal', icon: TrendingUp }
+          { id: 'fundamental' as const, label: 'Analisa Fundamental', icon: BarChart2 }
         ].map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -371,24 +358,6 @@ export default function Screener() {
             </div>
           </div>
         </>
-      )}
-
-      {/* Technical tab */}
-      {mainTab === 'technical' && (
-        <div className='grid grid-cols-2 gap-4'>
-          <ScreenerComps.RsiMarketView
-            data={screenerRsiData}
-            loading={screenerRsiLoading}
-            error={screenerRsiError}
-            onRefetch={refetchScreenerRsi}
-          />
-          <ScreenerComps.BidOfferMarketView
-            data={screenerBidOfferData}
-            loading={screenerBidOfferLoading}
-            error={screenerBidOfferError}
-            onRefetch={refetchScreenerBidOffer}
-          />
-        </div>
       )}
 
       {/* Watchlist tab */}

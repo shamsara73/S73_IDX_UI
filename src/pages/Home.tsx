@@ -22,6 +22,10 @@ interface DashboardData {
   watchlist: { code: string; price: number | null; changePct: number | null }[]
   topCandidates: { code: string; name: string | null; sector: string | null; composite: number; per: number | null; roe: number | null; week26: number | null }[]
   sectorStrength: { sector: string; avgMomentum: number; count: number }[]
+  topMovers: { code: string; name: string | null; changePct: number; price: number }[]
+  foreignFlow: { sector: string; net: number }[]
+  breadth: { advance: number; decline: number; unchanged: number; total: number }
+  highestValue: { code: string; name: string | null; value: number; price: number; changePct: number }[]
 }
 
 function fmtPct(v: number | null) {
@@ -117,6 +121,94 @@ export default function Home() {
                   </Card>
                 ))}
               </div>
+            </section>
+          )}
+
+          {/* Market Breadth */}
+          {data.breadth.total > 0 && (
+            <section>
+              <h2 className='mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted'>Market Breadth</h2>
+              <Card className='p-3'>
+                <div className='mb-2 flex h-3 overflow-hidden rounded-full'>
+                  <div className='bg-up' style={{ width: `${(data.breadth.advance / data.breadth.total) * 100}%` }} />
+                  <div className='bg-text-dim' style={{ width: `${(data.breadth.unchanged / data.breadth.total) * 100}%` }} />
+                  <div className='bg-down' style={{ width: `${(data.breadth.decline / data.breadth.total) * 100}%` }} />
+                </div>
+                <div className='flex justify-between text-[11px]'>
+                  <span className='text-up'>▲ {data.breadth.advance}</span>
+                  <span className='text-text-dim'>— {data.breadth.unchanged}</span>
+                  <span className='text-down'>▼ {data.breadth.decline}</span>
+                  <span className='text-text-muted'>{data.breadth.total} total</span>
+                </div>
+              </Card>
+            </section>
+          )}
+
+          {/* Top Movers */}
+          {data.topMovers.length > 0 && (
+            <section>
+              <h2 className='mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted'>Top Movers Hari Ini</h2>
+              <Card className='overflow-hidden p-0'>
+                <div className='grid grid-cols-2 divide-x divide-border-subtle'>
+                  <div className='p-3'>
+                    <span className='mb-1 block text-[10px] font-semibold uppercase text-up'>Top Gainers</span>
+                    {data.topMovers.filter((m) => m.changePct > 0).slice(0, 5).map((m) => (
+                      <div key={m.code} className='flex items-center justify-between py-1 text-xs'>
+                        <span className='font-semibold'>{m.code}</span>
+                        <Badge variant='success'>{fmtPct(m.changePct)}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                  <div className='p-3'>
+                    <span className='mb-1 block text-[10px] font-semibold uppercase text-down'>Top Losers</span>
+                    {data.topMovers.filter((m) => m.changePct < 0).slice(0, 5).map((m) => (
+                      <div key={m.code} className='flex items-center justify-between py-1 text-xs'>
+                        <span className='font-semibold'>{m.code}</span>
+                        <Badge variant='danger'>{fmtPct(m.changePct)}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            </section>
+          )}
+
+          {/* Foreign Flow */}
+          {data.foreignFlow.length > 0 && (
+            <section>
+              <h2 className='mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted'>Foreign Flow per Sektor</h2>
+              <div className='flex flex-wrap gap-1.5'>
+                {data.foreignFlow.map((f) => (
+                  <span
+                    key={f.sector}
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                      f.net >= 0 ? 'bg-up/10 text-up' : 'bg-down/10 text-down'
+                    }`}
+                  >
+                    <span className='max-w-[100px] truncate'>{f.sector}</span>
+                    <span>{f.net >= 0 ? '+' : ''}{(f.net / 1_000_000).toFixed(0)}jt</span>
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Highest Value */}
+          {data.highestValue.length > 0 && (
+            <section>
+              <h2 className='mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted'>Saham Paling Likuid</h2>
+              <Card className='overflow-hidden p-0'>
+                <div className='divide-y divide-border-subtle'>
+                  {data.highestValue.map((v) => (
+                    <div key={v.code} className='flex items-center justify-between px-3 py-2'>
+                      <span className='text-sm font-semibold tabular-nums'>{v.code}</span>
+                      <span className='text-xs text-text-muted'>Rp{v.price.toLocaleString('id-ID')}</span>
+                      <span className='text-xs text-text-dim'>Val: {(v.value / 1_000_000).toFixed(0)}jt</span>
+                      <Badge variant={v.changePct >= 0 ? 'success' : 'danger'}>{fmtPct(v.changePct)}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </Card>
             </section>
           )}
 
