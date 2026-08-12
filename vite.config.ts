@@ -2,16 +2,12 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
+import tailwindcss from '@tailwindcss/vite'
 
-/** Current project directory path */
 const dirName = path.dirname(fileURLToPath(import.meta.url))
 
-/**
- * Vite configuration.
- * @description Setup plugins and path aliases.
- */
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   server: {
     port: 50260,
     proxy: {
@@ -27,7 +23,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@app': path.resolve(dirName, 'src'),
-      '@data': path.resolve(dirName, 'data')
+      '@data': path.resolve(dirName, 'data'),
+      '@lib': path.resolve(dirName, 'src/lib')
     }
   },
   css: {

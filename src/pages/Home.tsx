@@ -2,14 +2,14 @@
  * Copyright (c) 2026 IDX Screener by @NeaByteLab (https://neabyte.com)
  * SPDX-License-Identifier: MIT
  *
- * Dashboard console — replaces the old FAQ-style beranda.
- * One fetch to /api/dashboard populates the entire page.
+ * Dashboard console — Tailwind + shadcn components.
  */
 
 import React, { useEffect, useState } from 'react'
 import { Format as Utils } from '@app/pages/utils/index.ts'
-import { TrendingUp, TrendingDown, AlertTriangle, Newspaper, Building2, BarChart3, Activity } from 'lucide-react'
-import * as Hooks from '@app/pages/hooks/index.ts'
+import { TrendingUp, TrendingDown, AlertTriangle, Newspaper, BarChart3, Activity, Building2 } from 'lucide-react'
+import { Card, CardHeader, CardTitle, CardContent } from '@app/components/ui/Card.tsx'
+import { Badge } from '@app/components/ui/Badge.tsx'
 
 interface DashboardData {
   globalMarkets: { symbol: string; name: string; price: number | null; changePct: number | null }[]
@@ -25,37 +25,26 @@ interface DashboardData {
 }
 
 function fmtPct(v: number | null) {
-  if (v == null) return '-'
+  if (v == null) return '—'
   return `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}%`
 }
 
 function fmtPrice(v: number | null) {
-  if (v == null) return '-'
+  if (v == null) return '—'
   return v.toLocaleString('id-ID', { maximumFractionDigits: 0 })
 }
 
 function MarketCard({ q }: { q: DashboardData['globalMarkets'][0] }) {
   const up = (q.changePct ?? 0) >= 0
   return (
-    <div className='idx-card idx-home-market-card'>
-      <span className='idx-home-market-name'>{q.name || q.symbol}</span>
-      <span className='idx-home-market-price'>{fmtPrice(q.price)}</span>
-      <span className={`idx-home-market-change ${up ? 'idx-pct-up' : 'idx-pct-down'}`}>
-        {up ? <TrendingUp size={12} aria-hidden /> : <TrendingDown size={12} aria-hidden />}
-        {' '}{fmtPct(q.changePct)}
-      </span>
-    </div>
-  )
-}
-
-function AlertRow({ icon, code, title, date }: { icon: React.ReactNode; code: string; title: string; date: string }) {
-  return (
-    <div className='idx-home-alert-row'>
-      <span className='idx-home-alert-icon'>{icon}</span>
-      <span className='idx-home-alert-code'>{code}</span>
-      <span className='idx-home-alert-title'>{title}</span>
-      <span className='idx-home-alert-date'>{date.slice(0, 10)}</span>
-    </div>
+    <Card className='flex flex-col gap-1 py-3 px-3'>
+      <span className='text-[11px] font-medium uppercase tracking-wider text-text-muted'>{q.name || q.symbol}</span>
+      <span className='text-xl font-bold text-text tabular-nums'>{fmtPrice(q.price)}</span>
+      <Badge variant={up ? 'success' : 'danger'} className='w-fit gap-1'>
+        {up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+        {fmtPct(q.changePct)}
+      </Badge>
+    </Card>
   )
 }
 
@@ -76,42 +65,56 @@ export default function Home() {
   }, [])
 
   if (loading) {
-    return <div className='idx-main idx-container'><p className='idx-p-muted'>Memuat dashboard...</p></div>
+    return (
+      <div className='flex min-h-[60vh] items-center justify-center'>
+        <p className='text-text-muted animate-pulse'>Memuat dashboard...</p>
+      </div>
+    )
   }
   if (error != null || data == null) {
-    return <div className='idx-main idx-container'><p className='idx-p-muted'>{error ?? 'Data tidak tersedia'}</p></div>
+    return (
+      <div className='flex min-h-[60vh] items-center justify-center'>
+        <p className='text-down'>{error ?? 'Data tidak tersedia'}</p>
+      </div>
+    )
   }
 
   return (
-    <div className='idx-main idx-container'>
-      <h1 className='idx-h1'>Dashboard</h1>
+    <div className='mx-auto max-w-7xl space-y-6 px-4 py-6'>
+      <h1 className='text-2xl font-bold tracking-tight'>Dashboard</h1>
 
-      {/* ── Global Markets ── */}
-      <section className='idx-mb-24'>
-        <h2 className='idx-section-title'>Pasar Global</h2>
-        <div className='idx-home-market-grid'>
+      {/* ── Market Pulse ── */}
+      <section>
+        <h2 className='mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted'>Pasar Global</h2>
+        <div className='grid grid-cols-3 gap-3 sm:grid-cols-6'>
           {data.globalMarkets.map((q) => <MarketCard key={q.symbol} q={q} />)}
         </div>
       </section>
 
-      <div className='idx-home-columns'>
-        {/* ── Left column ── */}
-        <div className='idx-home-col-main'>
+      {/* ── Main + Sidebar ── */}
+      <div className='grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]'>
+
+        {/* ── Left: News + Candidates + Announcements ── */}
+        <div className='space-y-6'>
 
           {/* Headlines */}
           {data.headlines.length > 0 && (
-            <section className='idx-mb-24'>
-              <h2 className='idx-section-title'><Newspaper size={16} aria-hidden /> Berita Utama</h2>
-              <div className='idx-home-news-grid'>
+            <section>
+              <h2 className='mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-muted'>
+                <Newspaper size={14} /> Berita Utama
+              </h2>
+              <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
                 {data.headlines.map((h, i) => (
-                  <div key={i} className='idx-card idx-home-news-card'>
-                    {h.imageUrl && <img src={h.imageUrl} alt='' className='idx-home-news-img' loading='lazy' />}
-                    <div className='idx-home-news-body'>
-                      <span className='idx-home-news-tag'>{h.tags}</span>
-                      <h3 className='idx-home-news-title'>{h.title}</h3>
-                      <p className='idx-home-news-date'>{h.publishedDate.slice(0, 10)}</p>
+                  <Card key={i} className='flex gap-3 overflow-hidden p-3'>
+                    {h.imageUrl && (
+                      <img src={h.imageUrl} alt='' className='h-16 w-20 flex-shrink-0 rounded-md object-cover' loading='lazy' />
+                    )}
+                    <div className='flex min-w-0 flex-col gap-1'>
+                      <span className='text-[10px] font-semibold uppercase text-accent'>{h.tags}</span>
+                      <h3 className='line-clamp-2 text-sm font-semibold leading-snug'>{h.title}</h3>
+                      <span className='text-[11px] text-text-dim'>{h.publishedDate.slice(0, 10)}</span>
                     </div>
-                  </div>
+                  </Card>
                 ))}
               </div>
             </section>
@@ -119,121 +122,152 @@ export default function Home() {
 
           {/* Top Candidates */}
           {data.topCandidates.length > 0 && (
-            <section className='idx-mb-24'>
-              <h2 className='idx-section-title'><BarChart3 size={16} aria-hidden /> Top Komposit</h2>
-              <div className='idx-table-wrap'>
-                <table className='idx-table'>
-                  <thead>
-                    <tr>
-                      <th>Kode</th>
-                      <th>Nama</th>
-                      <th className='idx-table-th-right'>Komposit</th>
-                      <th className='idx-table-th-right'>PER</th>
-                      <th className='idx-table-th-right'>ROE</th>
-                      <th className='idx-table-th-right'>26w</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.topCandidates.map((r) => (
-                      <tr key={r.code}>
-                        <td className='idx-table-code-bold'>{r.code}</td>
-                        <td className='idx-table-col-nama'>{r.name ?? '-'}</td>
-                        <td className='idx-table-td-right'>{(r.composite * 100).toFixed(0)}</td>
-                        <td className='idx-table-td-right'>{Utils.formatNum(r.per, 1)}</td>
-                        <td className='idx-table-td-right'>{Utils.formatNum(r.roe, 1)}</td>
-                        <td className='idx-table-td-right'>{fmtPct(r.week26 != null ? r.week26 / 100 : null)}</td>
+            <section>
+              <h2 className='mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-muted'>
+                <BarChart3 size={14} /> Top Komposit
+              </h2>
+              <Card className='overflow-hidden p-0'>
+                <div className='overflow-x-auto'>
+                  <table className='w-full text-sm'>
+                    <thead>
+                      <tr className='border-b border-border text-left text-xs text-text-muted'>
+                        <th className='px-4 py-2.5 font-medium'>Kode</th>
+                        <th className='px-4 py-2.5 font-medium'>Nama</th>
+                        <th className='px-4 py-2.5 text-right font-medium'>Komposit</th>
+                        <th className='px-4 py-2.5 text-right font-medium'>PER</th>
+                        <th className='px-4 py-2.5 text-right font-medium'>ROE</th>
+                        <th className='px-4 py-2.5 text-right font-medium'>26w</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {data.topCandidates.map((r, i) => (
+                        <tr key={r.code} className={`border-b border-border-subtle ${i % 2 === 0 ? 'bg-surface' : 'bg-surface-elevated'}`}>
+                          <td className='px-4 py-2.5 font-semibold tabular-nums'>{r.code}</td>
+                          <td className='max-w-[180px] truncate px-4 py-2.5 text-text-muted'>{r.name ?? '—'}</td>
+                          <td className='px-4 py-2.5 text-right font-semibold tabular-nums text-accent-light'>{(r.composite * 100).toFixed(0)}</td>
+                          <td className='px-4 py-2.5 text-right tabular-nums'>{Utils.formatNum(r.per, 1)}</td>
+                          <td className='px-4 py-2.5 text-right tabular-nums'>{Utils.formatNum(r.roe, 1)}</td>
+                          <td className='px-4 py-2.5 text-right tabular-nums'>
+                            <Badge variant={(r.week26 ?? 0) >= 0 ? 'success' : 'danger'}>{fmtPct(r.week26 != null ? r.week26 / 100 : null)}</Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
             </section>
           )}
 
           {/* Announcements */}
           {data.announcements.length > 0 && (
-            <section className='idx-mb-24'>
-              <h2 className='idx-section-title'><Building2 size={16} aria-hidden /> Pengumuman Emiten</h2>
-              <div className='idx-home-list'>
+            <section>
+              <h2 className='mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-muted'>
+                <Building2 size={14} /> Pengumuman Emiten
+              </h2>
+              <Card className='divide-y divide-border-subtle p-0'>
                 {data.announcements.map((a, i) => (
-                  <div key={i} className='idx-home-list-row'>
-                    <span className='idx-home-list-code'>{a.code}</span>
-                    <span className='idx-home-list-text'>{a.title}</span>
-                    <span className='idx-home-list-date'>{a.date.slice(0, 10)}</span>
+                  <div key={i} className='flex items-center gap-3 px-4 py-2.5'>
+                    <span className='w-14 flex-shrink-0 text-xs font-semibold tabular-nums'>{a.code}</span>
+                    <span className='min-w-0 flex-1 truncate text-sm text-text-muted'>{a.title}</span>
+                    <span className='flex-shrink-0 text-[11px] text-text-dim'>{a.date.slice(0, 10)}</span>
                   </div>
                 ))}
-              </div>
+              </Card>
             </section>
           )}
         </div>
 
-        {/* ── Right sidebar ── */}
-        <div className='idx-home-col-side'>
+        {/* ── Right Sidebar ── */}
+        <div className='space-y-4'>
 
           {/* Portfolio */}
           {data.portfolio != null && (
-            <div className='idx-card idx-mb-16'>
-              <h3 className='idx-section-title'>Portofolio</h3>
-              <div className='idx-dashboard-stats'>
-                <div className='idx-stat'>
-                  <span className='idx-stat-label'>Posisi</span>
-                  <span className='idx-stat-value'>{data.portfolio.positions}</span>
+            <Card>
+              <CardHeader><CardTitle>Portofolio</CardTitle></CardHeader>
+              <CardContent>
+                <div className='grid grid-cols-2 gap-3'>
+                  <div>
+                    <span className='text-[11px] text-text-muted'>Posisi</span>
+                    <p className='text-lg font-bold tabular-nums'>{data.portfolio.positions}</p>
+                  </div>
+                  <div>
+                    <span className='text-[11px] text-text-muted'>P&L</span>
+                    <p className={`text-lg font-bold tabular-nums ${data.portfolio.pnl >= 0 ? 'text-up' : 'text-down'}`}>
+                      {Utils.formatRp(data.portfolio.pnl)}
+                    </p>
+                    <span className={`text-xs ${data.portfolio.pnlPct >= 0 ? 'text-up' : 'text-down'}`}>{fmtPct(data.portfolio.pnlPct)}</span>
+                  </div>
                 </div>
-                <div className='idx-stat'>
-                  <span className='idx-stat-label'>P&L</span>
-                  <span className={`idx-stat-value ${data.portfolio.pnl >= 0 ? 'idx-pnl-positive' : 'idx-pnl-negative'}`}>
-                    {Utils.formatRp(data.portfolio.pnl)} ({fmtPct(data.portfolio.pnlPct)})
-                  </span>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Watchlist */}
           {data.watchlist.length > 0 && (
-            <div className='idx-card idx-mb-16'>
-              <h3 className='idx-section-title'><Activity size={14} aria-hidden /> Watchlist</h3>
-              <div className='idx-home-list'>
-                {data.watchlist.map((w) => (
-                  <div key={w.code} className='idx-home-list-row'>
-                    <span className='idx-home-list-code'>{w.code}</span>
-                    <span className='idx-home-list-text'>{fmtPrice(w.price)}</span>
-                    <span className={`${(w.changePct ?? 0) >= 0 ? 'idx-pct-up' : 'idx-pct-down'}`}>{fmtPct(w.changePct)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <Card>
+              <CardHeader><CardTitle className='flex items-center gap-1.5'><Activity size={14} /> Watchlist</CardTitle></CardHeader>
+              <CardContent>
+                <div className='divide-y divide-border-subtle'>
+                  {data.watchlist.map((w) => (
+                    <div key={w.code} className='flex items-center justify-between py-2'>
+                      <span className='text-sm font-semibold tabular-nums'>{w.code}</span>
+                      <span className='text-sm tabular-nums'>{fmtPrice(w.price)}</span>
+                      <Badge variant={(w.changePct ?? 0) >= 0 ? 'success' : 'danger'}>{fmtPct(w.changePct)}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
-          {/* Sector Strength */}
+          {/* Sectors */}
           {data.sectorStrength.length > 0 && (
-            <div className='idx-card idx-mb-16'>
-              <h3 className='idx-section-title'>Sektor (Momentum)</h3>
-              <div className='idx-home-list'>
-                {data.sectorStrength.map((s) => (
-                  <div key={s.sector} className='idx-home-list-row'>
-                    <span className='idx-home-list-text'>{s.sector}</span>
-                    <span className={`${s.avgMomentum >= 0 ? 'idx-pct-up' : 'idx-pct-down'}`}>{fmtPct(s.avgMomentum)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <Card>
+              <CardHeader><CardTitle>Sektor (Momentum)</CardTitle></CardHeader>
+              <CardContent>
+                <div className='space-y-2'>
+                  {data.sectorStrength.map((s) => (
+                    <div key={s.sector} className='flex items-center justify-between'>
+                      <span className='text-sm text-text-muted'>{s.sector}</span>
+                      <Badge variant={s.avgMomentum >= 0 ? 'success' : 'danger'}>{fmtPct(s.avgMomentum)}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
-          {/* Alerts: Suspend + UMA + Relisting */}
+          {/* Alerts */}
           {(data.suspensions.length > 0 || data.uma.length > 0 || data.relistings.length > 0) && (
-            <div className='idx-card idx-mb-16'>
-              <h3 className='idx-section-title'><AlertTriangle size={14} aria-hidden /> Alerts & Aksi Korporasi</h3>
-              {data.suspensions.map((s, i) => (
-                <AlertRow key={`s${i}`} icon={<AlertTriangle size={12} color='#ef4444' />} code={s.code} title={s.title} date={s.date} />
-              ))}
-              {data.uma.map((u, i) => (
-                <AlertRow key={`u${i}`} icon={<AlertTriangle size={12} color='#f59e0b' />} code={u.code} title={u.title} date={u.date} />
-              ))}
-              {data.relistings.map((r, i) => (
-                <AlertRow key={`r${i}`} icon={<Building2 size={12} color='#10b981' />} code={r.code} title={r.name} date={r.type} />
-              ))}
-            </div>
+            <Card>
+              <CardHeader><CardTitle className='flex items-center gap-1.5'><AlertTriangle size={14} /> Alerts</CardTitle></CardHeader>
+              <CardContent>
+                <div className='divide-y divide-border-subtle'>
+                  {data.suspensions.map((s, i) => (
+                    <div key={`s${i}`} className='flex items-center gap-2 py-2'>
+                      <Badge variant='danger'>Suspend</Badge>
+                      <span className='text-sm font-semibold'>{s.code}</span>
+                      <span className='min-w-0 flex-1 truncate text-xs text-text-muted'>{s.title}</span>
+                    </div>
+                  ))}
+                  {data.uma.map((u, i) => (
+                    <div key={`u${i}`} className='flex items-center gap-2 py-2'>
+                      <Badge variant='warning'>UMA</Badge>
+                      <span className='text-sm font-semibold'>{u.code}</span>
+                      <span className='min-w-0 flex-1 truncate text-xs text-text-muted'>{u.title}</span>
+                    </div>
+                  ))}
+                  {data.relistings.map((r, i) => (
+                    <div key={`r${i}`} className='flex items-center gap-2 py-2'>
+                      <Badge variant='success'>Relist</Badge>
+                      <span className='text-sm font-semibold'>{r.code}</span>
+                      <span className='min-w-0 flex-1 truncate text-xs text-text-muted'>{r.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>

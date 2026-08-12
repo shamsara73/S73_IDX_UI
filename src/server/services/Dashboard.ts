@@ -129,20 +129,19 @@ export class Dashboard {
       }
     }
 
-    // Watchlist with current prices (from IDX realtime)
+    // Watchlist with current prices (from IDX realtime) — parallel
     const wlRows = await Database.select().from(Schemas.watchlist).orderBy(asc(Schemas.watchlist.code))
-    const watchlist: DashboardData['watchlist'] = []
-    for (const wl of wlRows.slice(0, 8)) {
-      try {
+    const watchlistResults = await Promise.allSettled(
+      wlRows.slice(0, 8).map(async (wl) => {
         const res = await client.get(`${IDX}/home/GetStockInfo?code=${wl.code}`, { signal: AbortSignal.timeout(8000) })
-        if (res.ok) {
-          const j = (await res.json()) as { Price?: number; Percent?: number }
-          watchlist.push({ code: wl.code, price: j.Price ?? null, changePct: j.Percent != null ? j.Percent / 100 : null })
-        }
-      } catch {
-        watchlist.push({ code: wl.code, price: null, changePct: null })
-      }
-    }
+        if (!res.ok) return { code: wl.code, price: null, changePct: null }
+        const j = (await res.json()) as { Price?: number; Percent?: number }
+        return { code: wl.code, price: j.Price ?? null, changePct: j.Percent != null ? j.Percent / 100 : null }
+      })
+    )
+    const watchlist: DashboardData['watchlist'] = watchlistResults.map((r) =>
+      r.status === 'fulfilled' ? r.value : { code: '?', price: null, changePct: null }
+    )
 
     // Top candidates
     const screenerRows = await Database.select({
