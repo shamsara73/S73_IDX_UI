@@ -8,13 +8,14 @@
 
 import React, { useCallback } from 'react'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
-import { BarChart3, History, Home as HomeIcon, Info, LineChart, PieChart } from 'lucide-react'
+import { BarChart3, BookOpen, History, Home as HomeIcon, Info, LineChart, PieChart } from 'lucide-react'
 import Home from '@app/pages/Home.tsx'
 import About from '@app/pages/About.tsx'
 import Screener from '@app/pages/Screener.tsx'
 import Historical from '@app/pages/Historical.tsx'
 import Backtest from '@app/pages/Backtest.tsx'
 import Portfolio from '@app/pages/Portfolio.tsx'
+import Journal from '@app/pages/Journal.tsx'
 
 export default function App() {
   const location = useLocation()
@@ -66,6 +67,13 @@ export default function App() {
               <span className='idx-nav-item-text'>Portofolio</span>
             </Link>
             <Link
+              to='/journal'
+              className={`idx-nav-item ${isActive('/journal') ? 'idx-nav-item-active' : ''}`}
+            >
+              <BookOpen size={16} aria-hidden />
+              <span className='idx-nav-item-text'>Journal</span>
+            </Link>
+            <Link
               to='/about'
               className={`idx-nav-item ${isActive('/about') ? 'idx-nav-item-active' : ''}`}
             >
@@ -83,6 +91,7 @@ export default function App() {
           <Route path='/screener' element={<Screener />} />
           <Route path='/backtest' element={<Backtest />} />
           <Route path='/portfolio' element={<Portfolio />} />
+          <Route path='/journal' element={<Journal />} />
         </Routes>
       </main>
     </div>
