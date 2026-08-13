@@ -8,12 +8,18 @@ import * as Hooks from '@app/pages/hooks/index.ts'
 import * as Utils from '@app/pages/utils/index.ts'
 import type * as Types from '@app/pages/Types.ts'
 
-type Strategy = 'momentum' | 'rsi' | 'value'
+type Strategy = 'momentum' | 'rsi' | 'value' | 'dividend' | 'quality' | 'foreignFlow' | 'breakout' | 'meanReversion' | 'custom'
 
 const STRATEGY_LABEL: Record<Strategy, string> = {
   momentum: 'Momentum (beli yang kuat)',
-  rsi: 'RSI (beli yang oversold)',
-  value: 'Value (PER kuartalan terendah, historis)'
+  rsi: 'RSI (beli oversold)',
+  value: 'Value (PER rendah)',
+  dividend: 'Dividend (yield tinggi)',
+  quality: 'Quality (ROE tinggi, DER rendah)',
+  foreignFlow: 'Foreign Flow (beli asing terbanyak)',
+  breakout: 'Breakout (52w high)',
+  meanReversion: 'Mean Reversion (jatuh terdalam)',
+  custom: 'Custom (atur sendiri)'
 }
 
 function EquityChart({
@@ -72,6 +78,10 @@ export default function Backtest() {
   const [startDate, setStartDate] = useState('20240811')
   const [minValue, setMinValue] = useState('1000000000')
   const [excludeNotation, setExcludeNotation] = useState(true)
+  const [customPerMax, setCustomPerMax] = useState('')
+  const [customRoeMin, setCustomRoeMin] = useState('')
+  const [customDerMax, setCustomDerMax] = useState('')
+  const [customYieldMin, setCustomYieldMin] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<Types.BacktestResult | null>(null)
@@ -80,21 +90,28 @@ export default function Backtest() {
     setLoading(true)
     setError(null)
     try {
-      const res = await Hooks.fetchApi<Types.BacktestResult>('/api/backtest', {
+      const params: Record<string, unknown> = {
         strategy,
         topN,
         rebalanceWeeks,
         startDate: startDate === '' ? undefined : Number(startDate),
         minValue: minValue === '' ? undefined : Number(minValue),
         excludeNotation
-      })
+      }
+      if (strategy === 'custom') {
+        if (customPerMax !== '') params.perMax = Number(customPerMax)
+        if (customRoeMin !== '') params.roeMin = Number(customRoeMin)
+        if (customDerMax !== '') params.derMax = Number(customDerMax)
+        if (customYieldMin !== '') params.yieldMin = Number(customYieldMin)
+      }
+      const res = await Hooks.fetchApi<Types.BacktestResult>('/api/backtest', params)
       setResult(res)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Gagal menjalankan backtest')
     } finally {
       setLoading(false)
     }
-  }, [strategy, topN, rebalanceWeeks, startDate, minValue, excludeNotation])
+  }, [strategy, topN, rebalanceWeeks, startDate, minValue, excludeNotation, customPerMax, customRoeMin, customDerMax, customYieldMin])
 
   const stats = result?.stats
   const fmtPct = (v: number | undefined) => Utils.Format.formatPct(v != null ? v * 100 : null)
@@ -123,9 +140,9 @@ export default function Backtest() {
                 value={strategy}
                 onChange={(e) => setStrategy(e.target.value as Strategy)}
               >
-                <option value='momentum'>Momentum</option>
-                <option value='rsi'>RSI (oversold)</option>
-                <option value='value'>Value (PER)</option>
+                {Object.entries(STRATEGY_LABEL).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
               </select>
             </div>
             <div className='flex flex-col gap-1'>
@@ -203,6 +220,32 @@ export default function Backtest() {
             </div>
           </div>
           {error != null && <p className='text-red-500 text-sm mt-2'>{error}</p>}
+
+          {/* Custom strategy parameters */}
+          {strategy === 'custom' && (
+            <div className='mt-3 rounded-lg border border-accent/20 bg-accent/5 p-3'>
+              <p className='text-xs font-semibold text-accent mb-2'>Parameter Custom</p>
+              <div className='grid grid-cols-2 sm:grid-cols-4 gap-2'>
+                {[
+                  { label: 'PER Max', value: customPerMax, set: setCustomPerMax, placeholder: '15' },
+                  { label: 'ROE Min (%)', value: customRoeMin, set: setCustomRoeMin, placeholder: '15' },
+                  { label: 'DER Max', value: customDerMax, set: setCustomDerMax, placeholder: '1' },
+                  { label: 'Yield Min (%)', value: customYieldMin, set: setCustomYieldMin, placeholder: '3' }
+                ].map(({ label, value, set, placeholder }) => (
+                  <div key={label} className='flex flex-col gap-0.5'>
+                    <label className='text-[10px] text-text-dim'>{label}</label>
+                    <input
+                      type='number'
+                      value={value}
+                      onChange={(e) => set(e.target.value)}
+                      placeholder={placeholder}
+                      className='h-7 rounded border border-border bg-surface px-2 text-xs text-text placeholder:text-text-dim focus:border-accent focus:outline-none'
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {result != null && stats != null && (

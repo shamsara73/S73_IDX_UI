@@ -15,7 +15,15 @@ import { asc, eq, gte } from 'drizzle-orm'
 import Database from '@app/server/Database.ts'
 import * as Schemas from '@app/server/schemas/index.ts'
 
-export type BacktestStrategy = 'momentum' | 'rsi' | 'value'
+export type BacktestStrategy = 'momentum' | 'rsi' | 'value' | 'dividend' | 'quality' | 'foreignFlow' | 'breakout' | 'meanReversion' | 'custom'
+
+export interface BacktestCustomParams {
+  perMax?: number
+  roeMin?: number
+  derMax?: number
+  momentumMin?: number
+  yieldMin?: number
+}
 export type RebalanceWeeks = 4 | 12 | 26
 
 export interface BacktestParams {
@@ -25,6 +33,7 @@ export interface BacktestParams {
   startDate: number
   minValue?: number
   excludeNotation?: boolean
+  custom?: BacktestCustomParams
 }
 
 interface Point {
@@ -178,10 +187,15 @@ export class Backtest {
       code: Schemas.screener.code,
       name: Schemas.screener.name,
       per: Schemas.screener.per,
+      roe: Schemas.screener.roe,
+      der: Schemas.screener.der,
+      divYield: Schemas.screener.divYield,
+      week26PC: Schemas.screener.week26PC,
+      week52PC: Schemas.screener.week52PC,
       notation: Schemas.screener.notation
     }).from(Schemas.screener)
     const codeToInfo = new Map(
-      screenerRows.map((r) => [r.code, { name: r.name, per: r.per, notation: r.notation }])
+      screenerRows.map((r) => [r.code, { name: r.name, per: r.per, roe: r.roe, der: r.der, divYield: r.divYield, week26PC: r.week26PC, week52PC: r.week52PC, notation: r.notation }])
     )
     const excluded = new Set<string>()
     if (excludeNotation) {
@@ -191,6 +205,21 @@ export class Backtest {
         }
       }
     }
+    // Foreign flow data for foreignFlow strategy (latest date)
+    const foreignDate = await Database.select({ date: Schemas.summary.date }).from(Schemas.summary).orderBy(desc(Schemas.summary.date)).limit(1)
+    const foreignDateInt = foreignDate[0]?.date ?? 0
+    const foreignFlowMap = new Map<string, number>()
+    if (foreignDateInt > 0) {
+      const foreignRows = await Database.select({
+        code: Schemas.summary.stockCode,
+        foreignBuy: Schemas.summary.foreignBuy,
+        foreignSell: Schemas.summary.foreignSell
+      }).from(Schemas.summary).where(eq(Schemas.summary.date, foreignDateInt))
+      for (const r of foreignRows) {
+        foreignFlowMap.set(r.code, (r.foreignBuy ?? 0) - (r.foreignSell ?? 0))
+      }
+    }
+
     const avgValue = (code: string): number => {
       const s = valueSum.get(code)
       const c = valueCnt.get(code)
@@ -307,7 +336,42 @@ export class Backtest {
       if (strategy === 'rsi') {
         return rsiAt(pts, date)
       }
-      return perAt(code, date)
+      if (strategy === 'value') {
+        return perAt(code, date)
+      }
+      // Snapshot-based strategies (use current screener data)
+      const info = codeToInfo.get(code)
+      if (strategy === 'dividend') {
+        return info?.divYield ?? null
+      }
+      if (strategy === 'quality') {
+        const roe = info?.roe ?? 0
+        const der = info?.der ?? 0
+        return roe > 0 && der >= 0 ? roe / Math.max(der, 0.1) : null
+      }
+      if (strategy === 'foreignFlow') {
+        return foreignFlowMap.get(code) ?? null
+      }
+      if (strategy === 'breakout') {
+        return info?.week52PC ?? null
+      }
+      if (strategy === 'meanReversion') {
+        return info?.week26PC ?? null
+      }
+      if (strategy === 'custom') {
+        // Custom: filter by params, then rank by composite (value+quality+momentum)
+        const c = custom
+        if (c?.perMax != null && (info?.per ?? 999) > c.perMax) return null
+        if (c?.roeMin != null && (info?.roe ?? 0) < c.roeMin) return null
+        if (c?.derMax != null && (info?.der ?? 999) > c.derMax) return null
+        if (c?.yieldMin != null && (info?.divYield ?? 0) * 100 < c.yieldMin) return null
+        // Composite: value (low PER) + quality (high ROE/DER) + momentum (26w return)
+        const perScore = info?.per != null && info.per > 0 ? 1 / info.per : 0
+        const qualScore = (info?.roe ?? 0) / Math.max(info?.der ?? 1, 0.1)
+        const momScore = (info?.week26PC ?? 0) / 100
+        return perScore * 0.4 + qualScore * 0.3 + momScore * 0.3
+      }
+      return null
     }
 
     const equity: BacktestResult['equity'] = []
@@ -360,7 +424,8 @@ export class Backtest {
       if (useIndex) {
         indexPeriods++
       }
-      const dir = strategy === 'momentum' ? -1 : 1
+      const descStrategies = new Set(['momentum', 'dividend', 'quality', 'foreignFlow', 'breakout', 'custom'])
+      const dir = descStrategies.has(strategy) ? -1 : 1
       const ranked = scored
         .filter(
           (s) =>
