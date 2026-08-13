@@ -11,7 +11,7 @@
  * Benchmark: equal-weight average of the whole universe (market proxy).
  */
 
-import { asc, eq, gte } from 'drizzle-orm'
+import { asc, desc, eq, gte } from 'drizzle-orm'
 import Database from '@app/server/Database.ts'
 import * as Schemas from '@app/server/schemas/index.ts'
 
@@ -120,7 +120,7 @@ function rsiAt(points: Point[], date: number, period = 14): number | null {
 
 export class Backtest {
   static async run(params: BacktestParams): Promise<BacktestResult> {
-    const { strategy, topN, rebalanceWeeks, startDate, minValue, excludeNotation } = params
+    const { strategy, topN, rebalanceWeeks, startDate, minValue, excludeNotation, custom } = params
 
     const rows = await Database.select({
       date: Schemas.summary.date,
@@ -189,14 +189,46 @@ export class Backtest {
       per: Schemas.screener.per,
       roe: Schemas.screener.roe,
       der: Schemas.screener.der,
-      divYield: Schemas.screener.divYield,
       week26PC: Schemas.screener.week26PC,
       week52PC: Schemas.screener.week52PC,
       notation: Schemas.screener.notation
     }).from(Schemas.screener)
     const codeToInfo = new Map(
-      screenerRows.map((r) => [r.code, { name: r.name, per: r.per, roe: r.roe, der: r.der, divYield: r.divYield, week26PC: r.week26PC, week52PC: r.week52PC, notation: r.notation }])
+      screenerRows.map((r) => [r.code, { name: r.name, per: r.per, roe: r.roe, der: r.der, week26PC: r.week26PC, week52PC: r.week52PC, notation: r.notation }])
     )
+
+    // Dividend yields for dividend strategy
+    const dividendMap = new Map<string, number>()
+    if (strategy === 'dividend') {
+      const divRows = await Database.select({
+        code: Schemas.dividends.code,
+        cashDividend: Schemas.dividends.cashDividend,
+        exDividend: Schemas.dividends.exDividend
+      }).from(Schemas.dividends)
+      const now = Date.now()
+      const oneYearAgo = now - 365 * 24 * 60 * 60 * 1000
+      const divSum = new Map<string, number>()
+      for (const r of divRows) {
+        if (r.cashDividend == null || r.cashDividend <= 0) continue
+        const exDate = r.exDividend != null ? new Date(r.exDividend).getTime() : 0
+        if (exDate > oneYearAgo && exDate <= now) {
+          divSum.set(r.code, (divSum.get(r.code) ?? 0) + r.cashDividend)
+        }
+      }
+      // Get latest prices for yield computation
+      const latestDate = await Database.select({ date: Schemas.summary.date }).from(Schemas.summary).orderBy(desc(Schemas.summary.date)).limit(1)
+      if (latestDate[0]?.date != null) {
+        const prices = await Database.select({ code: Schemas.summary.stockCode, close: Schemas.summary.priceClose })
+          .from(Schemas.summary).where(eq(Schemas.summary.date, latestDate[0].date))
+        const priceMap = new Map(prices.map((p) => [p.code, p.close]))
+        for (const [code, sum] of divSum) {
+          const close = priceMap.get(code)
+          if (close != null && close > 0) {
+            dividendMap.set(code, sum / close)
+          }
+        }
+      }
+    }
     const excluded = new Set<string>()
     if (excludeNotation) {
       for (const [code, info] of codeToInfo) {
@@ -342,7 +374,7 @@ export class Backtest {
       // Snapshot-based strategies (use current screener data)
       const info = codeToInfo.get(code)
       if (strategy === 'dividend') {
-        return info?.divYield ?? null
+        return dividendMap.get(code) ?? null
       }
       if (strategy === 'quality') {
         const roe = info?.roe ?? 0
@@ -364,7 +396,6 @@ export class Backtest {
         if (c?.perMax != null && (info?.per ?? 999) > c.perMax) return null
         if (c?.roeMin != null && (info?.roe ?? 0) < c.roeMin) return null
         if (c?.derMax != null && (info?.der ?? 999) > c.derMax) return null
-        if (c?.yieldMin != null && (info?.divYield ?? 0) * 100 < c.yieldMin) return null
         // Composite: value (low PER) + quality (high ROE/DER) + momentum (26w return)
         const perScore = info?.per != null && info.per > 0 ? 1 / info.per : 0
         const qualScore = (info?.roe ?? 0) / Math.max(info?.der ?? 1, 0.1)
