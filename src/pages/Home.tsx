@@ -26,6 +26,7 @@ interface DashboardData {
   foreignFlow: { sector: string; net: number }[]
   breadth: { advance: number; decline: number; unchanged: number; total: number }
   highestValue: { code: string; name: string | null; value: number; price: number; changePct: number }[]
+  predictionHistory: { date: number; winRate: number | null; wins: number; losses: number; flat: number; total: number }[]
 }
 
 function fmtPct(v: number | null) {
@@ -358,6 +359,44 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Prediction History */}
+          {data.predictionHistory.length > 0 && (
+            <Card>
+              <CardHeader><CardTitle className='flex items-center gap-1.5'>🎯 Prediksi (14 Hari)</CardTitle></CardHeader>
+              <CardContent>
+                <div className='space-y-2'>
+                  {data.predictionHistory.slice(0, 7).map((p) => {
+                    const d = String(p.date)
+                    const dateStr = `${d.slice(6, 8)}/${d.slice(4, 6)}`
+                    const rate = p.winRate != null ? (p.winRate * 100).toFixed(0) : '—'
+                    const color = p.winRate != null ? (p.winRate >= 0.6 ? 'text-up' : p.winRate >= 0.4 ? 'text-warning' : 'text-down') : 'text-text-dim'
+                    return (
+                      <div key={p.date} className='flex items-center justify-between text-xs'>
+                        <span className='text-text-muted tabular-nums'>{dateStr}</span>
+                        <span className={`font-bold tabular-nums ${color}`}>{rate}%</span>
+                        <span className='text-text-dim'>{p.wins}W/{p.losses}L/{p.flat}F</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                {data.predictionHistory.length > 1 && (() => {
+                  const totalW = data.predictionHistory.reduce((s, p) => s + p.wins, 0)
+                  const totalL = data.predictionHistory.reduce((s, p) => s + p.losses, 0)
+                  const total = totalW + totalL
+                  const overallRate = total > 0 ? (totalW / total * 100).toFixed(0) : '—'
+                  const color = total > 0 ? (totalW / total >= 0.6 ? 'text-up' : totalW / total >= 0.4 ? 'text-warning' : 'text-down') : 'text-text-dim'
+                  return (
+                    <div className='mt-2 border-t border-border-subtle pt-2 text-xs'>
+                      <span className='text-text-muted'>Overall: </span>
+                      <span className={`font-bold ${color}`}>{overallRate}%</span>
+                      <span className='text-text-dim'> ({totalW}W/{totalL}L)</span>
+                    </div>
+                  )
+                })()}
               </CardContent>
             </Card>
           )}

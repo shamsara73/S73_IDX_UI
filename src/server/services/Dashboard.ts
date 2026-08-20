@@ -38,6 +38,7 @@ export interface DashboardData {
   foreignFlow: { sector: string; net: number }[]
   breadth: { advance: number; decline: number; unchanged: number; total: number }
   highestValue: { code: string; name: string | null; value: number; price: number; changePct: number }[]
+  predictionHistory: { date: number; winRate: number | null; wins: number; losses: number; flat: number; total: number }[]
 }
 
 export class Dashboard {
@@ -237,6 +238,38 @@ export class Dashboard {
         .slice(0, 5)
     }
 
-    return { globalMarkets: globalMarkets.status === 'fulfilled' ? globalMarkets.value : [], headlines, suspensions, uma, relistings, announcements, portfolio, watchlist, topCandidates, sectorStrength, topMovers, foreignFlow, breadth, highestValue }
+    // Prediction history (last 14 days)
+    const predRows = await Database.select({
+      date: Schemas.predictionResults.date,
+      outcome: Schemas.predictionResults.outcome,
+      count: sql<number>`count(*)`
+    })
+      .from(Schemas.predictionResults)
+      .groupBy(Schemas.predictionResults.date, Schemas.predictionResults.outcome)
+      .orderBy(desc(Schemas.predictionResults.date))
+
+    const predByDate = new Map<number, { win: number; loss: number; flat: number }>()
+    for (const r of predRows) {
+      const entry = predByDate.get(r.date) ?? { win: 0, loss: 0, flat: 0 }
+      if (r.outcome === 'win') entry.win = r.count
+      else if (r.outcome === 'loss') entry.loss = r.count
+      else entry.flat = r.count
+      predByDate.set(r.date, entry)
+    }
+    const predictionHistory = [...predByDate.entries()]
+      .slice(0, 14)
+      .map(([date, counts]) => {
+        const total = counts.win + counts.loss
+        return {
+          date,
+          winRate: total > 0 ? counts.win / total : null,
+          wins: counts.win,
+          losses: counts.loss,
+          flat: counts.flat,
+          total: counts.win + counts.loss + counts.flat
+        }
+      })
+
+    return { globalMarkets: globalMarkets.status === 'fulfilled' ? globalMarkets.value : [], headlines, suspensions, uma, relistings, announcements, portfolio, watchlist, topCandidates, sectorStrength, topMovers, foreignFlow, breadth, highestValue, predictionHistory }
   }
 }
