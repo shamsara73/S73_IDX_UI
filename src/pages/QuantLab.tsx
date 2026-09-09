@@ -7,6 +7,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { Cpu, TrendingUp, BarChart2, ShieldCheck, Activity, Target } from 'lucide-react'
 import * as ScreenerComps from '@app/pages/components/screener/index.ts'
 import * as Hooks from '@app/pages/hooks/index.ts'
+import * as Utils from '@app/pages/utils/index.ts'
 
 interface QuantData {
   date: number
@@ -50,8 +51,10 @@ export function QuantLab() {
 
   const handleRowClick = useCallback((code: string) => {
     setSelectedStock(code)
-    fetchDetail(code)
-  }, [fetchDetail])
+    const endDate = data?.date ?? parseInt(new Date().toISOString().slice(0, 10).replace(/-/g, ''), 10)
+    const startDate = Utils.Format.addDaysToDateInt(endDate, -90)
+    fetchDetail(code, startDate, endDate, data?.date)
+  }, [data?.date, fetchDetail])
 
   const handleCloseModal = useCallback(() => {
     setSelectedStock(null)
