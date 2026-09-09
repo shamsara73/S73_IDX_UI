@@ -39,6 +39,7 @@ export interface DashboardData {
   breadth: { advance: number; decline: number; unchanged: number; total: number }
   highestValue: { code: string; name: string | null; value: number; price: number; changePct: number }[]
   predictionHistory: { date: number; winRate: number | null; wins: number; losses: number; flat: number; total: number }[]
+  quantTopPicks: { code: string; name: string | null; close: number | null; sector: string | null; predFwd5d: number | null; aiScore5d: number | null }[]
 }
 
 export class Dashboard {
@@ -270,6 +271,37 @@ export class Dashboard {
         }
       })
 
-    return { globalMarkets: globalMarkets.status === 'fulfilled' ? globalMarkets.value : [], headlines, suspensions, uma, relistings, announcements, portfolio, watchlist, topCandidates, sectorStrength, topMovers, foreignFlow, breadth, highestValue, predictionHistory }
+    // Latest Quant Top Picks (LightGBM 5-day alpha signals)
+    let quantTopPicks: { code: string; name: string | null; close: number | null; sector: string | null; predFwd5d: number | null; aiScore5d: number | null }[] = []
+    try {
+      const screenerAll = await Database.select({ code: Schemas.screener.code, name: Schemas.screener.name }).from(Schemas.screener)
+      const codeToName = new Map(screenerAll.map((s) => [s.code, s.name]))
+
+      const latestQuantDate = await Database.select({ date: Schemas.quantPredictions.date })
+        .from(Schemas.quantPredictions)
+        .orderBy(desc(Schemas.quantPredictions.date))
+        .limit(1)
+
+      if (latestQuantDate.length > 0 && latestQuantDate[0]?.date) {
+        const qRows = await Database.select()
+          .from(Schemas.quantPredictions)
+          .where(eq(Schemas.quantPredictions.date, latestQuantDate[0].date))
+          .orderBy(desc(Schemas.quantPredictions.aiScore5d))
+          .limit(6)
+
+        quantTopPicks = qRows.map((r) => ({
+          code: r.code,
+          name: codeToName.get(r.code) ?? null,
+          close: r.close,
+          sector: r.sector,
+          predFwd5d: r.predFwd5d,
+          aiScore5d: r.aiScore5d
+        }))
+      }
+    } catch {
+      // quant table optional fallback
+    }
+
+    return { globalMarkets: globalMarkets.status === 'fulfilled' ? globalMarkets.value : [], headlines, suspensions, uma, relistings, announcements, portfolio, watchlist, topCandidates, sectorStrength, topMovers, foreignFlow, breadth, highestValue, predictionHistory, quantTopPicks }
   }
 }

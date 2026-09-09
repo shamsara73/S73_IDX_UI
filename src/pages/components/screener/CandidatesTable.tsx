@@ -106,6 +106,7 @@ export default function CandidatesTable({
               <SortHeader label='26w' sortKey='week26PC' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
               <SortHeader label='52w' sortKey='week52PC' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
               <SortHeader label='Comp' sortKey='compositeScore' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
+              <SortHeader label='AI 5D' sortKey='aiScore5d' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
               <SortHeader label='V' sortKey='valueScore' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
               <SortHeader label='Q' sortKey='qualityScore' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
               <SortHeader label='M' sortKey='momentumScore' sortBy={sortBy} sortDir={sortDir} onSortChange={onSortChange} />
@@ -166,6 +167,9 @@ export default function CandidatesTable({
                 </td>
                 <td className='pr-3 py-2 text-right font-semibold tabular-nums text-accent'>
                   {r.compositePercentile != null ? (r.compositePercentile * 100).toFixed(0) : '—'}
+                </td>
+                <td className='pr-3 py-2 text-right font-bold tabular-nums text-accent bg-accent/5 rounded'>
+                  {r.aiScore5d != null ? (r.aiScore5d).toFixed(0) : '—'}
                 </td>
                 <td className='pr-3 py-2 text-right tabular-nums text-text-muted'>
                   {r.valueScore != null ? (r.valueScore * 100).toFixed(0) : '—'}

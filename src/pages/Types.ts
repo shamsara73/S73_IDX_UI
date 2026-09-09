@@ -31,6 +31,8 @@ export interface CandidateRow {
   divYears?: number | null
   roeTrend?: -1 | 0 | 1 | null
   perTrend?: -1 | 0 | 1 | null
+  aiScore5d?: number | null
+  predFwd5d?: number | null
 }
 
 export interface CandidateRowWithSectorRank extends CandidateRow {

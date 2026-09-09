@@ -5,7 +5,7 @@
 
 import React, { useCallback } from 'react'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
-import { BarChart3, BookOpen, History, Home as HomeIcon, Info, LineChart, PieChart } from 'lucide-react'
+import { BarChart3, BookOpen, Cpu, History, Home as HomeIcon, Info, LineChart, PieChart } from 'lucide-react'
 import Home from '@app/pages/Home.tsx'
 import About from '@app/pages/About.tsx'
 import Screener from '@app/pages/Screener.tsx'
@@ -13,10 +13,12 @@ import Historical from '@app/pages/Historical.tsx'
 import Backtest from '@app/pages/Backtest.tsx'
 import Portfolio from '@app/pages/Portfolio.tsx'
 import Journal from '@app/pages/Journal.tsx'
+import { QuantLab } from '@app/pages/QuantLab.tsx'
 
 const NAV = [
   { path: '/', label: 'Beranda', icon: HomeIcon },
   { path: '/screener', label: 'Screener', icon: BarChart3 },
+  { path: '/quant', label: 'Quant AI', icon: Cpu },
   { path: '/historical', label: 'Historical', icon: History },
   { path: '/backtest', label: 'Backtest', icon: LineChart },
   { path: '/portfolio', label: 'Portfolio', icon: PieChart },
@@ -70,12 +72,13 @@ export default function App() {
       <main className='min-h-[calc(100vh-3rem)]'>
         <Routes>
           <Route path='/' element={<Home />} />
-          <Route path='/about' element={<About />} />
-          <Route path='/historical' element={<Historical />} />
           <Route path='/screener' element={<Screener />} />
+          <Route path='/quant' element={<QuantLab />} />
+          <Route path='/historical' element={<Historical />} />
           <Route path='/backtest' element={<Backtest />} />
           <Route path='/portfolio' element={<Portfolio />} />
           <Route path='/journal' element={<Journal />} />
+          <Route path='/about' element={<About />} />
         </Routes>
       </main>
     </div>

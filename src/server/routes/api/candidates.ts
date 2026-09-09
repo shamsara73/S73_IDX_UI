@@ -138,6 +138,30 @@ export async function GET(ctx: Context) {
     cashDividend: Schemas.dividends.cashDividend,
     recordDate: Schemas.dividends.recordDate
   }).from(Schemas.dividends)
+
+  // Quant AI Predictions map
+  const codeToQuant = new Map<string, { predFwd5d: number | null; aiScore5d: number | null }>()
+  try {
+    const latestQDate = await Database.select({ date: Schemas.quantPredictions.date })
+      .from(Schemas.quantPredictions)
+      .orderBy(desc(Schemas.quantPredictions.date))
+      .limit(1)
+
+    if (latestQDate.length > 0 && latestQDate[0]?.date) {
+      const qRows = await Database.select()
+        .from(Schemas.quantPredictions)
+        .where(eq(Schemas.quantPredictions.date, latestQDate[0].date))
+
+      for (const qr of qRows) {
+        codeToQuant.set(qr.code, {
+          predFwd5d: qr.predFwd5d,
+          aiScore5d: qr.aiScore5d
+        })
+      }
+    }
+  } catch {
+    // optional fallback
+  }
   const nowTs = Date.now()
   const cutoff365 = nowTs - 365 * 86400000
   const cutoff4y = nowTs - 4 * 365 * 86400000
@@ -286,6 +310,7 @@ export async function GET(ctx: Context) {
     const changePct = codeToChangePct.get(row.code) ?? null
     const dividend = codeToDividend.get(row.code)
     const ratioTrend = codeToRatioTrend.get(row.code)
+    const quant = codeToQuant.get(row.code)
     return {
       ...row,
       hasNotation,
@@ -303,7 +328,9 @@ export async function GET(ctx: Context) {
       divYield: dividend?.divYield ?? null,
       divYears: dividend?.divYears ?? 0,
       roeTrend: ratioTrend?.roeTrend ?? null,
-      perTrend: ratioTrend?.perTrend ?? null
+      perTrend: ratioTrend?.perTrend ?? null,
+      aiScore5d: quant?.aiScore5d ?? null,
+      predFwd5d: quant?.predFwd5d ?? null
     }
   })
   let withSectorRankApplied: Types.CandidateRow[] | Types.CandidateRowWithSectorRank[] =
@@ -386,7 +413,8 @@ export async function GET(ctx: Context) {
     valueScore: (row) => row.valueScore ?? null,
     qualityScore: (row) => row.qualityScore ?? null,
     momentumScore: (row) => row.momentumScore ?? null,
-    changePct: (row) => row.changePct ?? null
+    changePct: (row) => row.changePct ?? null,
+    aiScore5d: (row) => row.aiScore5d ?? null
   }
   if (sortByParam != null && sortByParam in sortWhitelist) {
     const accessor = sortWhitelist[sortByParam]!

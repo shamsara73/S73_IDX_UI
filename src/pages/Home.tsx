@@ -27,6 +27,7 @@ interface DashboardData {
   breadth: { advance: number; decline: number; unchanged: number; total: number }
   highestValue: { code: string; name: string | null; value: number; price: number; changePct: number }[]
   predictionHistory: { date: number; winRate: number | null; wins: number; losses: number; flat: number; total: number }[]
+  quantTopPicks?: { code: string; name: string | null; close: number | null; sector: string | null; predFwd5d: number | null; aiScore5d: number | null }[]
 }
 
 function fmtPct(v: number | null) {
@@ -142,6 +143,39 @@ export default function Home() {
                   <span className='text-text-muted'>{data.breadth.total} total</span>
                 </div>
               </Card>
+            </section>
+          )}
+
+          {/* Quant Alpha Radar */}
+          {data.quantTopPicks && data.quantTopPicks.length > 0 && (
+            <section>
+              <div className='mb-3 flex items-center justify-between'>
+                <h2 className='text-xs font-semibold uppercase tracking-wider text-accent flex items-center gap-1.5'>
+                  🤖 Quant AI Alpha Picks (5D Model)
+                </h2>
+                <span className='text-[10px] text-text-dim'>LightGBM Top Decile</span>
+              </div>
+              <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2'>
+                {data.quantTopPicks.map((q) => (
+                  <Card key={q.code} className='p-3 bg-surface-raised border-border flex flex-col justify-between hover:border-accent/40 transition-colors'>
+                    <div>
+                      <div className='flex items-center justify-between mb-1'>
+                        <span className='font-bold text-sm text-text'>{q.code}</span>
+                        <span className='text-[10px] font-mono px-1.5 py-0.5 rounded bg-accent/10 text-accent font-bold'>
+                          {q.aiScore5d != null ? `${q.aiScore5d.toFixed(0)}` : '—'}
+                        </span>
+                      </div>
+                      <p className='text-[11px] text-text-muted truncate'>{q.name ?? q.sector ?? ''}</p>
+                    </div>
+                    <div className='mt-2 pt-2 border-t border-border-subtle flex items-center justify-between text-xs'>
+                      <span className='text-text-dim text-[10px]'>Exp 5D:</span>
+                      <span className={`font-mono font-semibold ${(q.predFwd5d ?? 0) >= 0 ? 'text-up' : 'text-down'}`}>
+                        {q.predFwd5d != null ? `${(q.predFwd5d * 100).toFixed(1)}%` : '—'}
+                      </span>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </section>
           )}
 
