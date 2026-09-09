@@ -15,6 +15,8 @@ export const quantPredictions = sqliteTable('quant_predictions', {
   aiScore5d: real('ai_score_5d'),
   predFwd10d: real('pred_fwd_10d'),
   aiScore10d: real('ai_score_10d'),
+  probTop10: real('prob_top10'),
+  signalGrade: text('signal_grade'),
   createdAt: integer('created_at').notNull()
 }, (t) => ({
   codeDateUnique: uniqueIndex('quant_predictions_code_date_unique').on(t.code, t.date),
