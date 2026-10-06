@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { Cpu, TrendingUp, BarChart2, ShieldCheck, Activity, Target, Wallet, AlertOctagon, CheckCircle2, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { Cpu, TrendingUp, BarChart2, ShieldCheck, Activity, Target, Wallet, AlertOctagon, CheckCircle2, ArrowUpRight, ArrowDownRight, Sun, Moon } from 'lucide-react'
 import * as ScreenerComps from '@app/pages/components/screener/index.ts'
 import * as Hooks from '@app/pages/hooks/index.ts'
 import * as Utils from '@app/pages/utils/index.ts'
@@ -80,13 +80,36 @@ interface PaperData {
   }
 }
 
+interface DayNightItem {
+  rank: number
+  code: string
+  name: string | null
+  sector: string | null
+  lastClose: number | null
+  volume20dAvg: number | null
+  rvol: number | null
+  closeLocationPct: number | null
+  pbsjScore: number | null
+  pbsjWinRate20d: number | null
+  pbsjWinRate60d: number | null
+  pbsjAvgRet20d: number | null
+  pbsjAvgRet60d: number | null
+  avgIntradayRange20d: number | null
+  sbpjScore: number | null
+  sbpjWinRate20d: number | null
+  sbpjWinRate60d: number | null
+  sbpjAvgRet20d: number | null
+  sbpjAvgRet60d: number | null
+}
+
 export function QuantLab() {
   const [data, setData] = useState<QuantData | null>(null)
   const [paper, setPaper] = useState<PaperData | null>(null)
+  const [dayNightList, setDayNightList] = useState<DayNightItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedStock, setSelectedStock] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'alpha' | 'paper'>('alpha')
+  const [activeTab, setActiveTab] = useState<'alpha' | 'pbsj' | 'sbpj' | 'paper'>('alpha')
   const [activeHorizon, setActiveHorizon] = useState<'5d' | '10d'>('5d')
   const [orderSubmitting, setOrderSubmitting] = useState(false)
   const [orderMsg, setOrderMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
@@ -102,9 +125,10 @@ export function QuantLab() {
   const loadAll = useCallback(async () => {
     try {
       setLoading(true)
-      const [quantRes, paperRes] = await Promise.all([
+      const [quantRes, paperRes, dnRes] = await Promise.all([
         Hooks.fetchApi<{ ok: boolean; topPicks?: any[]; date?: number; totalStocks?: number; allPicks?: any[] }>('/api/quant/rankings'),
-        Hooks.fetchApi<{ ok: boolean; data?: PaperData }>('/api/quant/paper')
+        Hooks.fetchApi<{ ok: boolean; data?: PaperData }>('/api/quant/paper'),
+        Hooks.fetchApi<{ ok: boolean; data?: DayNightItem[] }>(`/api/quant/day-night?type=${activeTab === 'sbpj' ? 'sbpj' : 'pbsj'}&limit=60`)
       ])
 
       if (quantRes.ok && quantRes.topPicks) {
@@ -118,12 +142,15 @@ export function QuantLab() {
       if (paperRes.ok && paperRes.data) {
         setPaper(paperRes.data)
       }
+      if (dnRes.ok && dnRes.data) {
+        setDayNightList(dnRes.data)
+      }
     } catch (err) {
       setError(String(err))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [activeTab])
 
   useEffect(() => {
     loadAll()
@@ -141,7 +168,7 @@ export function QuantLab() {
     clearDetail()
   }, [clearDetail])
 
-  const handlePaperBuy = async (code: string, price: number | null, signalGrade: string | null) => {
+  const handlePaperBuy = async (code: string, price: number | null, signalGrade: string | null, reason: string = 'QUANT_ENSEMBLE_PICK') => {
     if (!price || price <= 0) return
     try {
       setOrderSubmitting(true)
@@ -154,7 +181,7 @@ export function QuantLab() {
           code,
           price,
           signalGrade: signalGrade ?? 'AAA',
-          reason: 'QUANT_ENSEMBLE_PICK'
+          reason
         })
       })
       const json = await res.json()
@@ -209,16 +236,16 @@ export function QuantLab() {
   return (
     <div className='container mx-auto max-w-7xl px-4 py-6 space-y-6'>
       {/* Header */}
-      <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-border-subtle pb-4'>
+      <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border-subtle pb-4'>
         <div>
           <h1 className='text-2xl font-bold tracking-tight text-text flex items-center gap-2'>
-            <Cpu className='text-accent' size={24} /> Quant AI & Paper Trading Lab
+            <Cpu className='text-accent' size={24} /> Quant AI & Day/Night Alpha Lab
           </h1>
           <p className='text-sm text-text-muted'>
-            Multi-Model Ensemble (LightGBM 5D/10D + Top-Decile Classifier) paired with Volatility Risk Budgeting & Real-time Paper Trading Sandbox.
+            Machine Learning Ensemble + Anomaly Day/Night Screeners (Pagi Beli Sore Jual & Sore Beli Pagi Jual) with Volatility Risk Management.
           </p>
         </div>
-        <div className='flex items-center gap-2'>
+        <div className='flex flex-wrap items-center gap-2'>
           <button
             type='button'
             onClick={() => setActiveTab('alpha')}
@@ -228,10 +255,24 @@ export function QuantLab() {
           </button>
           <button
             type='button'
+            onClick={() => setActiveTab('pbsj')}
+            className={`text-xs px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 ${activeTab === 'pbsj' ? 'bg-amber-400 text-bg-base' : 'bg-surface border border-border text-text-muted hover:text-text'}`}
+          >
+            <Sun size={13} className='text-amber-400' /> Pagi Beli Sore Jual
+          </button>
+          <button
+            type='button'
+            onClick={() => setActiveTab('sbpj')}
+            className={`text-xs px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 ${activeTab === 'sbpj' ? 'bg-indigo-400 text-bg-base' : 'bg-surface border border-border text-text-muted hover:text-text'}`}
+          >
+            <Moon size={13} className='text-indigo-400' /> Sore Beli Pagi Jual
+          </button>
+          <button
+            type='button'
             onClick={() => setActiveTab('paper')}
             className={`text-xs px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 ${activeTab === 'paper' ? 'bg-accent text-bg-base' : 'bg-surface border border-border text-text-muted hover:text-text'}`}
           >
-            <Wallet size={14} /> Paper Sandbox
+            <Wallet size={13} /> Paper Sandbox
           </button>
         </div>
       </div>
@@ -242,116 +283,71 @@ export function QuantLab() {
         </div>
       )}
 
-      {/* Overview Cards */}
-      {activeTab === 'alpha' ? (
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-          <div className='p-4 bg-surface border border-border rounded-xl flex items-center gap-3'>
-            <div className='p-2.5 rounded-lg bg-accent/10 text-accent'>
-              <Target size={20} />
+      {/* Mode Overview Banner */}
+      {activeTab === 'pbsj' && (
+        <div className='p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl flex flex-col md:flex-row md:items-center md:justify-between gap-3'>
+          <div className='flex items-center gap-3'>
+            <div className='p-2.5 rounded-lg bg-amber-500/20 text-amber-400'>
+              <Sun size={24} />
             </div>
             <div>
-              <span className='text-[11px] font-semibold text-text-dim uppercase'>Ensemble Architecture</span>
-              <p className='text-sm font-bold text-text'>35% Reg5D + 25% Reg10D + 25% Clf90 + 15% Rule</p>
+              <h3 className='text-sm font-bold text-amber-300'>Pagi Beli Sore Jual (PBSJ - Intraday Momentum)</h3>
+              <p className='text-xs text-text-muted'>
+                Screens stocks with highest historical probability of closing higher than open: <span className='text-text font-mono font-bold'>P(Close &gt; Open) &gt; 65%</span> with high intraday range.
+              </p>
             </div>
           </div>
-          <div className='p-4 bg-surface border border-border rounded-xl flex items-center gap-3'>
-            <div className='p-2.5 rounded-lg bg-accent/10 text-accent'>
-              <ShieldCheck size={20} />
-            </div>
-            <div>
-              <span className='text-[11px] font-semibold text-text-dim uppercase'>Circuit Breaker</span>
-              <p className='text-sm font-bold font-mono text-text'>{paper?.circuitBreaker.message ?? 'Active'}</p>
-            </div>
-          </div>
-          <div className='p-4 bg-surface border border-border rounded-xl flex items-center gap-3'>
-            <div className='p-2.5 rounded-lg bg-accent/10 text-accent'>
-              <BarChart2 size={20} />
-            </div>
-            <div>
-              <span className='text-[11px] font-semibold text-text-dim uppercase'>Auto-Retrain Schedule</span>
-              <p className='text-sm font-semibold text-text'>Every Sunday 19:00 WIB</p>
-            </div>
-          </div>
-          <div className='p-4 bg-surface border border-border rounded-xl flex items-center gap-3'>
-            <div className='p-2.5 rounded-lg bg-accent/10 text-accent'>
-              <Activity size={20} />
-            </div>
-            <div>
-              <span className='text-[11px] font-semibold text-text-dim uppercase'>Alpha Horizon</span>
-              <div className='flex gap-1.5 mt-1'>
-                <button
-                  type='button'
-                  onClick={() => setActiveHorizon('5d')}
-                  className={`text-xs px-2 py-0.5 rounded font-mono font-bold transition ${activeHorizon === '5d' ? 'bg-accent text-bg-base' : 'bg-surface-elevated text-text-muted'}`}
-                >
-                  5D Target
-                </button>
-                <button
-                  type='button'
-                  onClick={() => setActiveHorizon('10d')}
-                  className={`text-xs px-2 py-0.5 rounded font-mono font-bold transition ${activeHorizon === '10d' ? 'bg-accent text-bg-base' : 'bg-surface-elevated text-text-muted'}`}
-                >
-                  10D Target
-                </button>
-              </div>
-            </div>
+          <div className='text-right'>
+            <span className='text-[11px] text-text-dim uppercase'>Execution Window</span>
+            <p className='text-xs font-bold text-text font-mono'>Entry 09:00–09:10 WIB → Exit 15:45–15:50 WIB</p>
           </div>
         </div>
-      ) : (
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-          <div className='p-4 bg-surface border border-border rounded-xl flex items-center gap-3'>
-            <div className='p-2.5 rounded-lg bg-accent/10 text-accent'>
-              <Wallet size={20} />
+      )}
+
+      {activeTab === 'sbpj' && (
+        <div className='p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-xl flex flex-col md:flex-row md:items-center md:justify-between gap-3'>
+          <div className='flex items-center gap-3'>
+            <div className='p-2.5 rounded-lg bg-indigo-500/20 text-indigo-400'>
+              <Moon size={24} />
             </div>
             <div>
-              <span className='text-[11px] font-semibold text-text-dim uppercase'>Portfolio NAV</span>
-              <p className='text-lg font-bold font-mono text-text'>Rp{(paper?.portfolio.nav ?? 0).toLocaleString('id-ID')}</p>
-            </div>
-          </div>
-          <div className='p-4 bg-surface border border-border rounded-xl flex items-center gap-3'>
-            <div className='p-2.5 rounded-lg bg-accent/10 text-accent'>
-              <TrendingUp size={20} />
-            </div>
-            <div>
-              <span className='text-[11px] font-semibold text-text-dim uppercase'>Total Realized + Unrealized</span>
-              <p className={`text-lg font-bold font-mono ${(paper?.totalPnl ?? 0) >= 0 ? 'text-up' : 'text-down'}`}>
-                {(paper?.totalPnlPct ?? 0) >= 0 ? '+' : ''}{(paper?.totalPnlPct ?? 0).toFixed(2)}%
-                <span className='text-xs font-normal text-text-dim ml-1'>({(paper?.totalPnl ?? 0) >= 0 ? '+' : ''}Rp{(paper?.totalPnl ?? 0).toLocaleString('id-ID')})</span>
+              <h3 className='text-sm font-bold text-indigo-300'>Sore Beli Pagi Jual (SBPJ - Overnight Gap Anomaly)</h3>
+              <p className='text-xs text-text-muted'>
+                Screens stocks with end-of-day accumulation closing near high of day (<span className='text-text font-mono font-bold'>Close Loc &gt; 80%</span>) and high overnight gap win-rate.
               </p>
             </div>
           </div>
-          <div className='p-4 bg-surface border border-border rounded-xl flex items-center gap-3'>
-            <div className='p-2.5 rounded-lg bg-accent/10 text-accent'>
-              <CheckCircle2 size={20} />
-            </div>
-            <div>
-              <span className='text-[11px] font-semibold text-text-dim uppercase'>Available Cash</span>
-              <p className='text-lg font-bold font-mono text-text'>Rp{(paper?.portfolio.cash ?? 0).toLocaleString('id-ID')}</p>
-            </div>
-          </div>
-          <div className='p-4 bg-surface border border-border rounded-xl flex items-center gap-3'>
-            <div className='p-2.5 rounded-lg bg-accent/10 text-accent'>
-              <AlertOctagon size={20} />
-            </div>
-            <div>
-              <span className='text-[11px] font-semibold text-text-dim uppercase'>Max Drawdown Limit</span>
-              <p className='text-sm font-bold font-mono text-text'>
-                {paper?.circuitBreaker.maxDrawdownPct.toFixed(1)}% / 10.0% Max Cap
-              </p>
-            </div>
+          <div className='text-right'>
+            <span className='text-[11px] text-text-dim uppercase'>Execution Window</span>
+            <p className='text-xs font-bold text-text font-mono'>Entry 15:35–15:55 WIB → Exit 09:01–09:05 WIB Next Day</p>
           </div>
         </div>
       )}
 
       {/* Main Content Area */}
-      {activeTab === 'alpha' ? (
+      {activeTab === 'alpha' && (
         <div className='p-0 overflow-hidden border border-border rounded-xl bg-surface'>
           <div className='p-4 border-b border-border flex items-center justify-between'>
             <h2 className='text-sm font-semibold text-text flex items-center gap-2'>
               <TrendingUp size={16} className='text-accent' />
               Ranked Ensemble Signals ({activeHorizon.toUpperCase()} Horizon)
             </h2>
-            <span className='text-xs text-text-dim'>Click any row to inspect or execute risk-budgeted paper trade</span>
+            <div className='flex gap-1.5'>
+              <button
+                type='button'
+                onClick={() => setActiveHorizon('5d')}
+                className={`text-xs px-2.5 py-1 rounded font-mono font-bold transition ${activeHorizon === '5d' ? 'bg-accent text-bg-base' : 'bg-surface-elevated text-text-muted'}`}
+              >
+                5D Target
+              </button>
+              <button
+                type='button'
+                onClick={() => setActiveHorizon('10d')}
+                className={`text-xs px-2.5 py-1 rounded font-mono font-bold transition ${activeHorizon === '10d' ? 'bg-accent text-bg-base' : 'bg-surface-elevated text-text-muted'}`}
+              >
+                10D Target
+              </button>
+            </div>
           </div>
 
           {loading && <div className='py-12 text-center text-sm text-text-muted'>Computing Ensemble Alpha...</div>}
@@ -367,8 +363,8 @@ export function QuantLab() {
                     <th className='py-2.5 px-3 font-medium'>Grade</th>
                     <th className='py-2.5 px-3 font-medium'>Sektor</th>
                     <th className='py-2.5 px-3 font-medium text-right'>Harga</th>
-                    <th className='py-2.5 px-3 font-medium text-right'>Predicted 5D</th>
-                    <th className='py-2.5 px-3 font-medium text-right'>Ensemble Alpha Score</th>
+                    <th className='py-2.5 px-3 font-medium text-right'>Predicted {activeHorizon.toUpperCase()}</th>
+                    <th className='py-2.5 px-3 font-medium text-right'>Ensemble Score</th>
                     <th className='py-2.5 pr-4 font-medium text-right'>Paper Action</th>
                   </tr>
                 </thead>
@@ -412,7 +408,7 @@ export function QuantLab() {
                           <button
                             type='button'
                             disabled={orderSubmitting}
-                            onClick={() => handlePaperBuy(r.code, r.close, r.signalGrade)}
+                            onClick={() => handlePaperBuy(r.code, r.close, r.signalGrade, 'QUANT_ALPHA_PICK')}
                             className='text-xs font-bold px-2.5 py-1 rounded bg-accent/10 border border-accent/30 text-accent hover:bg-accent hover:text-bg-base transition disabled:opacity-30'
                           >
                             + Buy Size
@@ -426,8 +422,92 @@ export function QuantLab() {
             </div>
           )}
         </div>
-      ) : (
-        /* Paper Portfolio Tab */
+      )}
+
+      {/* PBSJ / SBPJ Tables */}
+      {(activeTab === 'pbsj' || activeTab === 'sbpj') && (
+        <div className='p-0 overflow-hidden border border-border rounded-xl bg-surface'>
+          <div className='p-4 border-b border-border flex items-center justify-between'>
+            <h2 className='text-sm font-semibold text-text flex items-center gap-2'>
+              {activeTab === 'pbsj' ? <Sun size={16} className='text-amber-400' /> : <Moon size={16} className='text-indigo-400' />}
+              {activeTab === 'pbsj' ? 'Top Candidates — Pagi Beli Sore Jual (Intraday Alpha)' : 'Top Candidates — Sore Beli Pagi Jual (Overnight Gap Alpha)'}
+            </h2>
+            <span className='text-xs text-text-dim'>Sorted by composite strategy score (Win Rate + Expected Return + Extension)</span>
+          </div>
+
+          <div className='overflow-x-auto'>
+            <table className='w-full text-sm'>
+              <thead>
+                <tr className='border-b border-border bg-surface-elevated/40 text-left text-[11px] text-text-muted'>
+                  <th className='py-2.5 pl-4 pr-2 font-medium w-12'>Rank</th>
+                  <th className='py-2.5 px-3 font-medium'>Kode</th>
+                  <th className='py-2.5 px-3 font-medium'>Sektor</th>
+                  <th className='py-2.5 px-3 font-medium text-right'>Harga</th>
+                  <th className='py-2.5 px-3 font-medium text-right'>Win Rate (20D)</th>
+                  <th className='py-2.5 px-3 font-medium text-right'>Avg Ret (20D)</th>
+                  <th className='py-2.5 px-3 font-medium text-right'>{activeTab === 'pbsj' ? 'Intraday Range' : 'Close Location'}</th>
+                  <th className='py-2.5 px-3 font-medium text-right'>Strategy Score</th>
+                  <th className='py-2.5 pr-4 font-medium text-right'>Paper Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dayNightList.map((r, idx) => {
+                  const winRate = activeTab === 'pbsj' ? r.pbsjWinRate20d : r.sbpjWinRate20d
+                  const avgRet = activeTab === 'pbsj' ? r.pbsjAvgRet20d : r.sbpjAvgRet20d
+                  const score = activeTab === 'pbsj' ? r.pbsjScore : r.sbpjScore
+                  const extraMetric = activeTab === 'pbsj' ? `${r.avgIntradayRange20d?.toFixed(1)}%` : `${r.closeLocationPct?.toFixed(0)}% at High`
+
+                  return (
+                    <tr
+                      key={r.code}
+                      className={`border-b border-border-subtle transition hover:bg-accent/5 ${idx % 2 === 0 ? 'bg-surface' : 'bg-surface-elevated/20'}`}
+                    >
+                      <td className='py-2.5 pl-4 pr-2 font-mono text-text-dim text-xs'>#{idx + 1}</td>
+                      <td
+                        onClick={() => handleRowClick(r.code)}
+                        className='py-2.5 px-3 font-bold text-text tabular-nums cursor-pointer hover:text-accent'
+                      >
+                        {r.code}
+                      </td>
+                      <td className='py-2.5 px-3 text-text-muted text-xs truncate max-w-[140px]'>{r.sector ?? '—'}</td>
+                      <td className='py-2.5 px-3 text-right font-mono tabular-nums'>
+                        {r.lastClose != null ? `Rp${r.lastClose.toLocaleString('id-ID')}` : '—'}
+                      </td>
+                      <td className='py-2.5 px-3 text-right font-mono font-bold text-accent tabular-nums'>
+                        {winRate != null ? `${winRate.toFixed(1)}%` : '—'}
+                      </td>
+                      <td className={`py-2.5 px-3 text-right font-mono tabular-nums ${(avgRet ?? 0) >= 0 ? 'text-up font-semibold' : 'text-down'}`}>
+                        {avgRet != null ? `${avgRet >= 0 ? '+' : ''}${avgRet.toFixed(2)}%` : '—'}
+                      </td>
+                      <td className='py-2.5 px-3 text-right font-mono text-xs text-text-muted tabular-nums'>
+                        {extraMetric}
+                      </td>
+                      <td className='py-2.5 px-3 text-right'>
+                        <span className={`inline-block px-2 py-0.5 rounded font-mono font-bold text-xs ${activeTab === 'pbsj' ? 'bg-amber-400/10 text-amber-400 border border-amber-400/30' : 'bg-indigo-400/10 text-indigo-400 border border-indigo-400/30'}`}>
+                          {score != null ? score.toFixed(1) : '—'}
+                        </span>
+                      </td>
+                      <td className='py-2.5 pr-4 text-right'>
+                        <button
+                          type='button'
+                          disabled={orderSubmitting}
+                          onClick={() => handlePaperBuy(r.code, r.lastClose, 'A', activeTab === 'pbsj' ? 'PBSJ_DAYTRADE' : 'SBPJ_OVERNIGHT')}
+                          className='text-xs font-bold px-2.5 py-1 rounded bg-accent/10 border border-accent/30 text-accent hover:bg-accent hover:text-bg-base transition disabled:opacity-30'
+                        >
+                          + Buy Size
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Paper Tab */}
+      {activeTab === 'paper' && (
         <div className='space-y-6'>
           {/* Positions Table */}
           <div className='p-0 overflow-hidden border border-border rounded-xl bg-surface'>
@@ -439,7 +519,7 @@ export function QuantLab() {
               <span className='text-xs text-text-dim'>Volatility-Sized with Active Stop Loss / Take Profit</span>
             </div>
             {(!paper?.positions || paper.positions.length === 0) ? (
-              <div className='py-12 text-center text-sm text-text-dim'>No open positions. Buy top signals from the Alpha tab.</div>
+              <div className='py-12 text-center text-sm text-text-dim'>No open positions. Buy top signals from the Alpha or PBSJ/SBPJ tabs.</div>
             ) : (
               <div className='overflow-x-auto'>
                 <table className='w-full text-sm'>
@@ -506,6 +586,7 @@ export function QuantLab() {
                     <tr className='border-b border-border bg-surface-elevated/40 text-left text-[11px] text-text-muted'>
                       <th className='py-2.5 pl-4 pr-3 font-medium'>Side</th>
                       <th className='py-2.5 px-3 font-medium'>Kode</th>
+                      <th className='py-2.5 px-3 font-medium'>Reason</th>
                       <th className='py-2.5 px-3 font-medium text-right'>Lots</th>
                       <th className='py-2.5 px-3 font-medium text-right'>Fill Price</th>
                       <th className='py-2.5 px-3 font-medium text-right'>Total Value</th>
@@ -523,6 +604,7 @@ export function QuantLab() {
                           </span>
                         </td>
                         <td className='py-2 px-3 font-bold text-text'>{t.code}</td>
+                        <td className='py-2 px-3 text-xs font-mono text-text-dim'>{t.reason ?? '—'}</td>
                         <td className='py-2 px-3 text-right font-mono tabular-nums'>{(t.shares / 100).toFixed(0)}</td>
                         <td className='py-2 px-3 text-right font-mono tabular-nums'>Rp{t.price.toLocaleString('id-ID')}</td>
                         <td className='py-2 px-3 text-right font-mono tabular-nums'>Rp{t.totalValue.toLocaleString('id-ID')}</td>
